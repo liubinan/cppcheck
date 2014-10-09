@@ -450,7 +450,7 @@ bool Library::isScopeNoReturn(const Token *end, std::string *unknownFunc) const
     } else {
         return false;
     }
-    if (Token::Match(start,"[;{}]") && Token::Match(funcname, "%var% )| (")) {
+    if (Token::Match(start,"[,;{}]") && Token::Match(funcname, "%var% )| (")) {
         if (funcname->str() == "exit")
             return true;
         if (!isnotnoreturn(funcname->str())) {

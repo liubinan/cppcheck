@@ -4849,6 +4849,18 @@ private:
         ASSERT_EQUALS("", errout.str());
 
         check(
+            "void other_func(){}\n"
+            "void f() {\n"
+            "    char *p; p = malloc(100);\n"
+            "    if (x) {\n"
+            "        free(p);\n"
+            "        other_func(),exit();\n"
+            "    }\n"
+            "    free(p);\n"
+            "}");
+        ASSERT_EQUALS("", errout.str());
+
+        check(
             "void f() {\n"
             "    char *p; p = malloc(100);\n"
             "    if (x) {\n"
