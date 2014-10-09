@@ -24,10 +24,10 @@ public:
 
     virtual void runSimplifiedChecks(const Tokenizer *tokenizer, const Settings *settings, ErrorLogger *errorLogger) {
         CheckElog check(tokenizer, settings, errorLogger);
-        check.assertWithSideEffects();
+        check.quoteElogStringArg();
     }
 
-    void assertWithSideEffects();
+    void quoteElogStringArg();
 
 protected:
     static const Token* findElogPattern(const Token *start);

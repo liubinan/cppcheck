@@ -44,6 +44,7 @@ private:
 
         // Check..
         CheckElog CheckElog(&tokenizer, &settings, this);
+        tokenizer.simplifyTokenList2();
         CheckElog.runSimplifiedChecks(&tokenizer, &settings, this);
     }
 
@@ -68,6 +69,14 @@ private:
             "}\n"
             );
         ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'elog_finish' with macro _S().\n", errout.str());
+
+        check(
+            "void elog_finish(int ecode, char* fmt, ...){}\n"
+            "int foo() {\n"
+            "   ELOGElog(1,\"%d\", 1);\n"
+            "}\n"
+            );
+        ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'ELOGElog' with macro _S().\n", errout.str());
     }
 
 };

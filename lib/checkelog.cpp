@@ -13,11 +13,8 @@ namespace {
     CheckElog instance;
 }
 
-void CheckElog::assertWithSideEffects()
+void CheckElog::quoteElogStringArg()
 {
-    //if (!_settings->isEnabled("warning"))
-    //    return;
-
     const Token *tok = findElogPattern(_tokenizer->tokens());
     const Token *endTok = tok ? tok->next()->link() : nullptr;
  
@@ -45,10 +42,11 @@ void CheckElog::assertWithSideEffects()
 
 void CheckElog::quoteElogStringArgWith_SError(const Token *tok, const std::string& elogName)
 {
+    std::string literal_str = tok ? tok->str() : "null";
     reportError(tok, Severity::error,
         "quoteElogStringArgWith_S", 
-        "You should quote literal string argument  " + tok->str() + "  of '" + elogName + "' with macro _S().\n"
-        "You should quote literal string argument " + tok->str() + " with _S().");
+        "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().\n"
+        "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().");
 }
 
 const Token* CheckElog::findElogPattern(const Token* start)
