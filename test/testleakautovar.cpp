@@ -58,6 +58,7 @@ private:
         TEST_CASE(doublefree2);
         TEST_CASE(doublefree3); // #4914
         TEST_CASE(doublefree4); // #5451 - FP when exit is called
+        TEST_CASE(doublefree5);
 
         // exit
         TEST_CASE(exit1);
@@ -359,6 +360,16 @@ private:
               "  }\n"
               "  free(p);\n"
               "}");
+        ASSERT_EQUALS("", errout.str());
+    }
+
+    void doublefree5() {
+        check("void *f(int a) {\n"
+            "    char *p = malloc(10);\n"
+            "    if (a == 2) { free(p); func1(),exit(0); }\n"
+            "    free(p);\n"
+            "    return 0;\n"
+            "}");
         ASSERT_EQUALS("", errout.str());
     }
 
