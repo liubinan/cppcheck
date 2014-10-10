@@ -48,6 +48,9 @@ private:
     /** @brief enable extra checks by id */
     std::set<std::string> _enabled;
 
+    /** @brief enable extra checks by name */
+    std::set<std::string> _enabled_check;
+
     /** @brief terminate checking */
     bool _terminate;
 
@@ -158,12 +161,31 @@ public:
     }
 
     /**
+     * @brief Returns true if given check name is in the list of
+     * enabled checks (--enable-check)
+     * @param str name for the check, e.g. "IO"
+     * @return true if the check is enabled.
+     */
+    template<typename T>
+    bool isEnabledCheck(T&& str) const {
+        return bool(_enabled_check.empty() || _enabled_check.find(str) != _enabled_check.end());
+    }
+
+    /**
      * @brief Enable extra checks by id. See isEnabled()
      * @param str single id or list of id values to be enabled
      * or empty string to enable all. e.g. "style,possibleError"
      * @return error message. empty upon success
      */
     std::string addEnabled(const std::string &str);
+
+    /**
+     * @brief Enable checks by check name. See isEnabledCheck()
+     * @param str single name or list of names to be enabled
+     * or empty string to enable all. e.g. "IO,Elog"
+     * @return error message. empty upon success
+     */
+    std::string addEnabledCheck(const std::string &str);
 
     /**
      * @brief Disables all severities, except from error.

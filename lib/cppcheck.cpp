@@ -390,6 +390,9 @@ bool CppCheck::checkFile(const std::string &code, const char FileName[], std::se
             if (_settings.terminated())
                 return true;
 
+            if (!_settings.isEnabledCheck((*it)->name()))
+                continue;
+
             Timer timerRunChecks((*it)->name() + "::runChecks", _settings._showtime, &S_timerResults);
             (*it)->runChecks(&_tokenizer, &_settings, this);
         }
@@ -412,6 +415,9 @@ bool CppCheck::checkFile(const std::string &code, const char FileName[], std::se
         for (std::list<Check *>::const_iterator it = Check::instances().begin(); it != Check::instances().end(); ++it) {
             if (_settings.terminated())
                 return true;
+
+            if (!_settings.isEnabledCheck((*it)->name()))
+                continue;
 
             Timer timerSimpleChecks((*it)->name() + "::runSimplifiedChecks", _settings._showtime, &S_timerResults);
             (*it)->runSimplifiedChecks(&_tokenizer, &_settings, this);

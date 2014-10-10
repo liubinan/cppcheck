@@ -19,6 +19,7 @@
 #include "settings.h"
 #include "path.h"
 #include "preprocessor.h"       // Preprocessor
+#include "check.h"
 
 #include <fstream>
 #include <set>
@@ -111,6 +112,52 @@ std::string Settings::addEnabled(const std::string &str)
             return std::string("cppcheck: --enable parameter is empty");
         else
             return std::string("cppcheck: there is no --enable parameter with the name '" + str + "'");
+    }
+
+    return std::string("");
+}
+
+std::string Settings::addEnabledCheck(const std::string &str)
+{
+    // Enable Check parameters may be comma separated...
+    if (str.find(",") != std::string::npos) {
+        std::string::size_type prevPos = 0;
+        std::string::size_type pos = 0;
+        while ((pos = str.find(",", pos)) != std::string::npos) {
+            if (pos == prevPos)
+                return std::string("cppcheck: --enable-check parameter is empty");
+            const std::string errmsg(addEnabledCheck(str.substr(prevPos, pos - prevPos)));
+            if (!errmsg.empty())
+                return errmsg;
+            ++pos;
+            prevPos = pos;
+        }
+        if (prevPos >= str.length())
+            return std::string("cppcheck: --enable-check parameter is empty");
+        return addEnabledCheck(str.substr(prevPos));
+    }
+
+    bool handled = false;
+
+    std::set<std::string> check_names;
+    for (std::list<Check *>::const_iterator it = Check::instances().begin(); it != Check::instances().end(); ++it) {
+        check_names.insert((*it)->name());
+    }
+
+    if (str == "all") {
+        std::set<std::string>::const_iterator it;
+        for (it = check_names.begin(); it != check_names.end(); ++it) {
+            _enabled_check.insert(*it);
+        }
+    }
+    else if (check_names.find(str) != check_names.end()) {
+        _enabled_check.insert(str);
+    }
+    else if (!handled) {
+        if (str.empty())
+            return std::string("cppcheck: --enable-check parameter is empty");
+        else
+            return std::string("cppcheck: there is no --enable-check parameter with the name '" + str + "'");
     }
 
     return std::string("");

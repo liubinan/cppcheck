@@ -361,6 +361,14 @@ bool CmdLineParser::ParseFromArgs(int argc, const char* const argv[])
             }
         }
 
+        else if (std::strncmp(argv[i], "--enable-check=", 15) == 0) {
+            const std::string errmsg = _settings->addEnabledCheck(argv[i] + 15);
+            if (!errmsg.empty()) {
+                PrintMessage(errmsg);
+                return false;
+            }
+        }
+
         // --error-exitcode=1
         else if (std::strncmp(argv[i], "--error-exitcode=", 17) == 0) {
             std::string temp = argv[i]+17;
@@ -836,6 +844,19 @@ bool CmdLineParser::ParseFromArgs(int argc, const char* const argv[])
 
 void CmdLineParser::PrintHelp()
 {
+    std::string check_names;
+    for (std::list<Check *>::const_iterator it = Check::instances().begin(); it != Check::instances().end(); ++it) {
+        if (!check_names.empty()) {
+            check_names.append(",");
+        }
+        if ((*it)->name().find(' ') != std::string::npos) {
+            check_names.append("\"" + (*it)->name() + "\"");
+        }
+        else {
+            check_names.append((*it)->name());
+        }
+    }
+
     std::cout <<   "Cppcheck - A tool for static C/C++ code analysis\n"
               "\n"
               "Syntax:\n"
@@ -860,6 +881,10 @@ void CmdLineParser::PrintHelp()
               "    -U<ID>               Undefine preprocessor symbol. Use -U to explicitly\n"
               "                         hide certain #ifdef <ID> code paths from checking.\n"
               "                         Example: '-UDEBUG'\n"
+              "    --enable-check=<id>        Enable checks. The available names are:\n"
+              "                          * all\n"
+              "                                  Enable all checks. \n"
+              "                          * " + check_names + "\n"
               "    --enable=<id>        Enable additional checks. The available ids are:\n"
               "                          * all\n"
               "                                  Enable all checks. It is recommended to only\n"
