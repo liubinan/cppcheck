@@ -143,6 +143,9 @@
     <ClCompile Include="checktype.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="checkelog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="checkbufferoverrun.h">
@@ -281,6 +284,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="checktype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="checkelog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
