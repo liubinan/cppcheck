@@ -2511,6 +2511,9 @@ static void getparams(const std::string &line,
     }
 }
 
+class PreprocessorMacro;
+static void expandMacroInStr(std::string& line, std::map<std::string, PreprocessorMacro *> &macros);
+
 /** @brief Class that the preprocessor uses when it expands macros. This class represents a preprocessor macro */
 class PreprocessorMacro {
 private:
@@ -2540,53 +2543,19 @@ private:
     /** disabled assignment operator */
     void operator=(const PreprocessorMacro &);
 
-    /** @brief expand inner macro */
-    std::vector<std::string> expandInnerMacros(const std::vector<std::string> &params1,
-            const std::map<std::string, PreprocessorMacro *> &macros) const {
-        std::string innerMacroName;
+    /** @brief expand macro params */
+    std::vector<std::string> expandMacroParams(const std::vector<std::string> &params1,
+        std::map<std::string, PreprocessorMacro *> &macros) const {
 
-        // Is there an inner macro..
+        if (Token::findmatch(tokens(), "##|#"))
         {
-            const Token *tok = Token::findsimplematch(tokens(), ")");
-            if (!Token::Match(tok, ") %var% ("))
-                return params1;
-            innerMacroName = tok->strAt(1);
-            tok = tok->tokAt(3);
-            unsigned int par = 0;
-            while (Token::Match(tok, "%var% ,|)")) {
-                tok = tok->tokAt(2);
-                par++;
-            }
-            if (tok || par != params1.size())
-                return params1;
+            return params1;
         }
 
         std::vector<std::string> params2(params1);
 
         for (std::size_t ipar = 0; ipar < params1.size(); ++ipar) {
-            const std::string s(innerMacroName + "(");
-            std::string param(params1[ipar]);
-            if (param.compare(0,s.length(),s)==0 && param[param.length()-1]==')') {
-                std::vector<std::string> innerparams;
-                std::string::size_type pos = s.length() - 1;
-                unsigned int num = 0;
-                bool endFound = false;
-                getparams(param, pos, innerparams, num, endFound);
-                if (pos == param.length()-1 && num==0 && endFound && innerparams.size() == params1.size()) {
-                    // Is inner macro defined?
-                    std::map<std::string, PreprocessorMacro *>::const_iterator it = macros.find(innerMacroName);
-                    if (it != macros.end()) {
-                        // expand the inner macro
-                        const PreprocessorMacro *innerMacro = it->second;
-
-                        std::string innercode;
-                        std::map<std::string,PreprocessorMacro *> innermacros = macros;
-                        innermacros.erase(innerMacroName);
-                        innerMacro->code(innerparams, innermacros, innercode);
-                        params2[ipar] = innercode;
-                    }
-                }
-            }
+            expandMacroInStr(params2[ipar], macros);
         }
 
         return params2;
@@ -2672,7 +2641,9 @@ public:
      * @param macrocode output string
      * @return true if the expanding was successful
      */
-    bool code(const std::vector<std::string> &params2, const std::map<std::string, PreprocessorMacro *> &macros, std::string &macrocode) const {
+    bool code(const std::vector<std::string> &params2,
+        std::map<std::string, PreprocessorMacro *> &macros, 
+        std::string &macrocode) const {
         if (_nopar || (_params.empty() && _variadic)) {
             macrocode = _macro.substr(1 + _macro.find(")"));
             if (macrocode.empty())
@@ -2718,7 +2689,7 @@ public:
         }
 
         else {
-            const std::vector<std::string> givenparams = expandInnerMacros(params2, macros);
+            const std::vector<std::string> givenparams = expandMacroParams(params2, macros);
 
             const Token *tok = tokens();
             while (tok && tok->str() != ")")
@@ -2928,6 +2899,228 @@ void Preprocessor::validateCfgError(const std::string &cfg, const std::string &m
     _errorLogger->reportInfo(errmsg);
 }
 
+struct ExpandMacroException : public std::exception
+{
+    int linenr;
+    std::string errorType;
+    std::string errorText;
+
+    ExpandMacroException(int linenr, const std::string &errorType, const std::string &errorText)
+        : linenr(linenr), errorType(errorType), errorText(errorText) {
+        // do nothing
+    }
+};
+
+static void expandMacroInStr(std::string& strToExpand, std::map<std::string, PreprocessorMacro *> &macros)
+{
+    // Limit for each macro.
+    // The limit specify a position in the "line" variable.
+    // For a "recursive macro" where the expanded text contains
+    // the macro again, the macro should not be expanded again.
+    // The limits are used to prevent recursive expanding.
+    // * When a macro is expanded its limit position is set to
+    //   the last expanded character.
+    // * macros are only allowed to be expanded when the
+    //   the position is beyond the limit.
+    // * The limit is relative to the end of the "line"
+    //   variable. Inserting and deleting text before the limit
+    //   without updating the limit is safe.
+    // * when pos goes beyond a limit the limit needs to be
+    //   deleted because it is unsafe to insert/delete text
+    //   after the limit otherwise
+    std::map<const PreprocessorMacro *, std::size_t> limits;
+
+    // pos is the current position in line
+    std::string::size_type pos = 0;
+
+    // scan line to see if there are any macros to expand..
+    unsigned int tmpLinenr = 0;
+    while (pos < strToExpand.size()) {
+        if (strToExpand[pos] == '\n')
+            ++tmpLinenr;
+
+        // skip strings..
+        if (strToExpand[pos] == '\"' || strToExpand[pos] == '\'') {
+            const char ch = strToExpand[pos];
+
+            skipstring(strToExpand, pos);
+            ++pos;
+
+            if (pos > strToExpand.size()) {
+                throw ExpandMacroException(tmpLinenr, "noQuoteCharPair", std::string("No pair for character (") + ch + "). Can't process file. File is either invalid or unicode, which is currently not supported.");
+            }
+
+            continue;
+        }
+
+        if (!std::isalpha((unsigned char)strToExpand[pos]) && strToExpand[pos] != '_')
+            ++pos;
+
+        // found an identifier..
+        // the "while" is used in case the expanded macro will immediately call another macro
+        while (pos < strToExpand.length() && (std::isalpha((unsigned char)strToExpand[pos]) || strToExpand[pos] == '_')) {
+            // pos1 = start position of macro
+            const std::string::size_type pos1 = pos++;
+
+            // find the end of the identifier
+            while (pos < strToExpand.size() && (std::isalnum((unsigned char)strToExpand[pos]) || strToExpand[pos] == '_'))
+                ++pos;
+
+            // get identifier
+            const std::string id = strToExpand.substr(pos1, pos - pos1);
+
+            // is there a macro with this name?
+            std::map<std::string, PreprocessorMacro *>::const_iterator it;
+            it = macros.find(id);
+            if (it == macros.end())
+                break;  // no macro with this name exist
+
+            const PreprocessorMacro * const macro = it->second;
+
+            // check that pos is within allowed limits for this
+            // macro
+            {
+                const std::map<const PreprocessorMacro *, std::size_t>::const_iterator it2 = limits.find(macro);
+                if (it2 != limits.end() && pos <= strToExpand.length() - it2->second)
+                    break;
+            }
+
+            // get parameters from line..
+            std::vector<std::string> params;
+            std::string::size_type pos2 = pos;
+            if (macro->params().size() && pos2 >= strToExpand.length())
+                break;
+
+            // number of newlines within macro use
+            unsigned int numberOfNewlines = 0;
+
+            // if the macro has parentheses, get parameters
+            if (macro->variadic() || macro->nopar() || macro->params().size()) {
+                // is the end parentheses found?
+                bool endFound = false;
+
+                getparams(strToExpand, pos2, params, numberOfNewlines, endFound);
+
+                // something went wrong so bail out
+                if (!endFound)
+                    break;
+            }
+
+            // Just an empty parameter => clear
+            if (params.size() == 1 && params[0] == "")
+                params.clear();
+
+            // Check that it's the same number of parameters..
+            if (!macro->variadic() && params.size() != macro->params().size())
+                break;
+
+            // Create macro code..
+            std::string tempMacro;
+            if (!macro->code(params, macros, tempMacro)) {
+                // Syntax error in code
+                throw ExpandMacroException(tmpLinenr, "syntaxError", std::string("Syntax error. Not enough parameters for macro '") + macro->name() + "'.");
+            }
+
+            // make sure number of newlines remain the same..
+            std::string macrocode(std::string(numberOfNewlines, '\n') + tempMacro);
+
+            // Insert macro code..
+            if (macro->variadic() || macro->nopar() || !macro->params().empty())
+                ++pos2;
+
+            // Remove old limits
+            for (std::map<const PreprocessorMacro *, std::size_t>::iterator iter = limits.begin();
+                iter != limits.end();) {
+                if ((strToExpand.length() - pos1) < iter->second) {
+                    // We have gone past this limit, so just delete it
+                    limits.erase(iter++);
+                }
+                else {
+                    ++iter;
+                }
+            }
+
+            // don't allow this macro to be expanded again before pos2
+            limits[macro] = strToExpand.length() - pos2;
+
+            // erase macro
+            strToExpand.erase(pos1, pos2 - pos1);
+
+            // Don't glue this macro into variable or number after it
+            if (!strToExpand.empty() && (std::isalnum((unsigned char)strToExpand[pos1]) || strToExpand[pos1] == '_'))
+                macrocode.append(1, ' ');
+
+            // insert macrochar before each symbol/nr/operator
+            bool str = false;
+            bool chr = false;
+            for (std::size_t i = 0U; i < macrocode.size(); ++i) {
+                if (macrocode[i] == '\\') {
+                    i++;
+                    continue;
+                }
+                else if (macrocode[i] == '\"')
+                    str = !str;
+                else if (macrocode[i] == '\'')
+                    chr = !chr;
+                else if (str || chr)
+                    continue;
+                else if (macrocode[i] == '.') { // 5. / .5
+                    if ((i > 0U && std::isdigit((unsigned char)macrocode[i - 1])) ||
+                        (i + 1 < macrocode.size() && std::isdigit((unsigned char)macrocode[i + 1]))) {
+                        if (i > 0U && !std::isdigit((unsigned char)macrocode[i - 1])) {
+                            macrocode.insert(i, 1U, Preprocessor::macroChar);
+                            i++;
+                        }
+                        i++;
+                        if (i < macrocode.size() && std::isdigit((unsigned char)macrocode[i]))
+                            i++;
+                        if (i + 1U < macrocode.size() &&
+                            (macrocode[i] == 'e' || macrocode[i] == 'E') &&
+                            (macrocode[i + 1] == '+' || macrocode[i + 1] == '-')) {
+                            i += 2;
+                        }
+                    }
+                }
+                else if (std::isalnum((unsigned char)macrocode[i]) || macrocode[i] == '_') {
+                    if ((i > 0U) &&
+                        (!std::isalnum((unsigned char)macrocode[i - 1])) &&
+                        (macrocode[i - 1] != '_') &&
+                        (macrocode[i - 1] != Preprocessor::macroChar)) {
+                        macrocode.insert(i, 1U, Preprocessor::macroChar);
+                    }
+
+                    // 1e-7 / 1e+7
+                    if (i + 3U < macrocode.size() &&
+                        (std::isdigit((unsigned char)macrocode[i]) || macrocode[i] == '.') &&
+                        (macrocode[i + 1] == 'e' || macrocode[i + 1] == 'E') &&
+                        (macrocode[i + 2] == '-' || macrocode[i + 2] == '+') &&
+                        std::isdigit((unsigned char)macrocode[i + 3])) {
+                        i += 3U;
+                    }
+
+                    // 1.f / 1.e7
+                    if (i + 2U < macrocode.size() &&
+                        std::isdigit((unsigned char)macrocode[i]) &&
+                        macrocode[i + 1] == '.'      &&
+                        std::isalpha((unsigned char)macrocode[i + 2])) {
+                        i += 2U;
+                        if (i + 2U < macrocode.size() &&
+                            (macrocode[i + 0] == 'e' || macrocode[i + 0] == 'E') &&
+                            (macrocode[i + 1] == '-' || macrocode[i + 1] == '+') &&
+                            std::isdigit((unsigned char)macrocode[i + 2])) {
+                            i += 2U;
+                        }
+                    }
+                }
+            }
+            strToExpand.insert(pos1, Preprocessor::macroChar + macrocode);
+
+            // position = start position.
+            pos = pos1;
+        }
+    }
+}
+
 std::string Preprocessor::expandMacros(const std::string &code, std::string filename, const std::string &cfg, ErrorLogger *errorLogger)
 {
     // Search for macros and expand them..
@@ -3016,228 +3209,22 @@ std::string Preprocessor::expandMacros(const std::string &code, std::string file
 
         // expand macros..
         else {
-            // Limit for each macro.
-            // The limit specify a position in the "line" variable.
-            // For a "recursive macro" where the expanded text contains
-            // the macro again, the macro should not be expanded again.
-            // The limits are used to prevent recursive expanding.
-            // * When a macro is expanded its limit position is set to
-            //   the last expanded character.
-            // * macros are only allowed to be expanded when the
-            //   the position is beyond the limit.
-            // * The limit is relative to the end of the "line"
-            //   variable. Inserting and deleting text before the limit
-            //   without updating the limit is safe.
-            // * when pos goes beyond a limit the limit needs to be
-            //   deleted because it is unsafe to insert/delete text
-            //   after the limit otherwise
-            std::map<const PreprocessorMacro *, std::size_t> limits;
+            try
+            {
+                expandMacroInStr(line, macros);
+            }
+            catch (const ExpandMacroException& e)
+            {
+                writeError(filename,
+                            linenr + e.linenr,
+                            errorLogger,
+                            e.errorType,
+                            e.errorText);
 
-            // pos is the current position in line
-            std::string::size_type pos = 0;
-
-            // scan line to see if there are any macros to expand..
-            unsigned int tmpLinenr = 0;
-            while (pos < line.size()) {
-                if (line[pos] == '\n')
-                    ++tmpLinenr;
-
-                // skip strings..
-                if (line[pos] == '\"' || line[pos] == '\'') {
-                    const char ch = line[pos];
-
-                    skipstring(line, pos);
-                    ++pos;
-
-                    if (pos >= line.size()) {
-                        writeError(filename,
-                                   linenr + tmpLinenr,
-                                   errorLogger,
-                                   "noQuoteCharPair",
-                                   std::string("No pair for character (") + ch + "). Can't process file. File is either invalid or unicode, which is currently not supported.");
-
-                        std::map<std::string, PreprocessorMacro *>::iterator it;
-                        for (it = macros.begin(); it != macros.end(); ++it)
-                            delete it->second;
-                        macros.clear();
-                        return "";
-                    }
-
-                    continue;
-                }
-
-                if (!std::isalpha((unsigned char)line[pos]) && line[pos] != '_')
-                    ++pos;
-
-                // found an identifier..
-                // the "while" is used in case the expanded macro will immediately call another macro
-                while (pos < line.length() && (std::isalpha((unsigned char)line[pos]) || line[pos] == '_')) {
-                    // pos1 = start position of macro
-                    const std::string::size_type pos1 = pos++;
-
-                    // find the end of the identifier
-                    while (pos < line.size() && (std::isalnum((unsigned char)line[pos]) || line[pos] == '_'))
-                        ++pos;
-
-                    // get identifier
-                    const std::string id = line.substr(pos1, pos - pos1);
-
-                    // is there a macro with this name?
-                    std::map<std::string, PreprocessorMacro *>::const_iterator it;
-                    it = macros.find(id);
-                    if (it == macros.end())
-                        break;  // no macro with this name exist
-
-                    const PreprocessorMacro * const macro = it->second;
-
-                    // check that pos is within allowed limits for this
-                    // macro
-                    {
-                        const std::map<const PreprocessorMacro *, std::size_t>::const_iterator it2 = limits.find(macro);
-                        if (it2 != limits.end() && pos <= line.length() - it2->second)
-                            break;
-                    }
-
-                    // get parameters from line..
-                    std::vector<std::string> params;
-                    std::string::size_type pos2 = pos;
-                    if (macro->params().size() && pos2 >= line.length())
-                        break;
-
-                    // number of newlines within macro use
-                    unsigned int numberOfNewlines = 0;
-
-                    // if the macro has parentheses, get parameters
-                    if (macro->variadic() || macro->nopar() || macro->params().size()) {
-                        // is the end parentheses found?
-                        bool endFound = false;
-
-                        getparams(line,pos2,params,numberOfNewlines,endFound);
-
-                        // something went wrong so bail out
-                        if (!endFound)
-                            break;
-                    }
-
-                    // Just an empty parameter => clear
-                    if (params.size() == 1 && params[0] == "")
-                        params.clear();
-
-                    // Check that it's the same number of parameters..
-                    if (!macro->variadic() && params.size() != macro->params().size())
-                        break;
-
-                    // Create macro code..
-                    std::string tempMacro;
-                    if (!macro->code(params, macros, tempMacro)) {
-                        // Syntax error in code
-                        writeError(filename,
-                                   linenr + tmpLinenr,
-                                   errorLogger,
-                                   "syntaxError",
-                                   std::string("Syntax error. Not enough parameters for macro '") + macro->name() + "'.");
-
-                        std::map<std::string, PreprocessorMacro *>::iterator iter;
-                        for (iter = macros.begin(); iter != macros.end(); ++iter)
-                            delete iter->second;
-                        macros.clear();
-                        return "";
-                    }
-
-                    // make sure number of newlines remain the same..
-                    std::string macrocode(std::string(numberOfNewlines, '\n') + tempMacro);
-
-                    // Insert macro code..
-                    if (macro->variadic() || macro->nopar() || !macro->params().empty())
-                        ++pos2;
-
-                    // Remove old limits
-                    for (std::map<const PreprocessorMacro *, std::size_t>::iterator iter = limits.begin();
-                         iter != limits.end();) {
-                        if ((line.length() - pos1) < iter->second) {
-                            // We have gone past this limit, so just delete it
-                            limits.erase(iter++);
-                        } else {
-                            ++iter;
-                        }
-                    }
-
-                    // don't allow this macro to be expanded again before pos2
-                    limits[macro] = line.length() - pos2;
-
-                    // erase macro
-                    line.erase(pos1, pos2 - pos1);
-
-                    // Don't glue this macro into variable or number after it
-                    if (!line.empty() && (std::isalnum((unsigned char)line[pos1]) || line[pos1] == '_'))
-                        macrocode.append(1,' ');
-
-                    // insert macrochar before each symbol/nr/operator
-                    bool str = false;
-                    bool chr = false;
-                    for (std::size_t i = 0U; i < macrocode.size(); ++i) {
-                        if (macrocode[i] == '\\') {
-                            i++;
-                            continue;
-                        } else if (macrocode[i] == '\"')
-                            str = !str;
-                        else if (macrocode[i] == '\'')
-                            chr = !chr;
-                        else if (str || chr)
-                            continue;
-                        else if (macrocode[i] == '.') { // 5. / .5
-                            if ((i > 0U && std::isdigit((unsigned char)macrocode[i-1])) ||
-                                (i+1 < macrocode.size() && std::isdigit((unsigned char)macrocode[i+1]))) {
-                                if (i > 0U && !std::isdigit((unsigned char)macrocode[i-1])) {
-                                    macrocode.insert(i, 1U, macroChar);
-                                    i++;
-                                }
-                                i++;
-                                if (i<macrocode.size() && std::isdigit((unsigned char)macrocode[i]))
-                                    i++;
-                                if (i+1U < macrocode.size() &&
-                                    (macrocode[i] == 'e' || macrocode[i] == 'E') &&
-                                    (macrocode[i+1] == '+' || macrocode[i+1] == '-')) {
-                                    i+=2;
-                                }
-                            }
-                        } else if (std::isalnum((unsigned char)macrocode[i]) || macrocode[i] == '_') {
-                            if ((i > 0U)                        &&
-                                (!std::isalnum((unsigned char)macrocode[i-1])) &&
-                                (macrocode[i-1] != '_')         &&
-                                (macrocode[i-1] != macroChar)) {
-                                macrocode.insert(i, 1U, macroChar);
-                            }
-
-                            // 1e-7 / 1e+7
-                            if (i+3U < macrocode.size()     &&
-                                (std::isdigit((unsigned char)macrocode[i]) || macrocode[i]=='.')  &&
-                                (macrocode[i+1] == 'e' || macrocode[i+1] == 'E')   &&
-                                (macrocode[i+2] == '-' || macrocode[i+2] == '+')   &&
-                                std::isdigit((unsigned char)macrocode[i+3])) {
-                                i += 3U;
-                            }
-
-                            // 1.f / 1.e7
-                            if (i+2U < macrocode.size()    &&
-                                std::isdigit((unsigned char)macrocode[i]) &&
-                                macrocode[i+1] == '.'      &&
-                                std::isalpha((unsigned char)macrocode[i+2])) {
-                                i += 2U;
-                                if (i+2U < macrocode.size() &&
-                                    (macrocode[i+0] == 'e' || macrocode[i+0] == 'E')   &&
-                                    (macrocode[i+1] == '-' || macrocode[i+1] == '+')   &&
-                                    std::isdigit((unsigned char)macrocode[i+2])) {
-                                    i += 2U;
-                                }
-                            }
-                        }
-                    }
-                    line.insert(pos1, macroChar + macrocode);
-
-                    // position = start position.
-                    pos = pos1;
-                }
+                for (std::map<std::string, PreprocessorMacro *>::iterator it = macros.begin(); it != macros.end(); ++it)
+                    delete it->second;
+                macros.clear();
+                return "";
             }
         }
 

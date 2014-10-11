@@ -195,6 +195,7 @@ private:
         TEST_CASE(preprocessor_undef);
         TEST_CASE(defdef);  // Defined multiple times
         TEST_CASE(preprocessor_doublesharp);
+        TEST_CASE(preprocessor_doublesharp_nest);
         TEST_CASE(preprocessor_include_in_str);
         TEST_CASE(va_args_1);
         TEST_CASE(va_args_2);
@@ -2319,7 +2320,19 @@ private:
         ASSERT_EQUALS("\n\n\n\n$$$x_y\n", OurPreprocessor::expandMacros(filedata6));
     }
 
+    void preprocessor_doublesharp_nest() {
+        const char filedata1[] = "#define AB_(A,B) A ## B\n"
+            "#define AB(A,B) AB_(A,B)\n"
+            "#define suf 10\n"
+            "AB( AB(PRE_, suf), _t)\n";
+        ASSERT_EQUALS("\n\n\n$$PRE_10_t\n", OurPreprocessor::expandMacros(filedata1));
 
+        const char filedata2[] = "#define AB_(A,B) A ## B\n"
+            "#define AB(A,B) AB_(A,B)\n"
+            "#define suf 10\n"
+            "AB_( AB_(PRE_, suf), _t)\n";
+        ASSERT_EQUALS("\n\n\n$$PRE_10_t\n", OurPreprocessor::expandMacros(filedata2));
+    }
 
     void preprocessor_include_in_str() {
         const char filedata[] = "int main()\n"
