@@ -146,6 +146,12 @@
     <ClCompile Include="checkelog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="luaplugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lua_tinker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="checkbufferoverrun.h">
@@ -287,6 +293,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="checkelog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="luaplugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lua_tinker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
