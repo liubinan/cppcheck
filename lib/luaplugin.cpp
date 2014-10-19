@@ -12,6 +12,8 @@ extern "C"
 #include "lauxlib.h"
 };
 #include "lua_tinker.h"
+#include "lua/fflua.h"
+using namespace ff;
 //---------------------------------------------------------------------------
 
 
@@ -34,81 +36,66 @@ void defToken(lua_State* L) {
     typedef Token::Type(Token::*GetTypeFunc)() const;
     typedef bool (Token::*GetBoolFunc)() const;
     typedef unsigned int (Token::*GetUIntFunc)() const;
-
-    lua_tinker::class_add<Token>(L, "Token");
-    lua_tinker::class_def<Token>(L, "str", &Token::str);
-    lua_tinker::class_def<Token>(L, "tokAt", (GetTokenFuncInt)&Token::tokAt);
-    lua_tinker::class_def<Token>(L, "linkAt", (GetTokenFuncInt)&Token::linkAt);
-    lua_tinker::class_def<Token>(L, "strAt", &Token::strAt);
-
-    lua_tinker::def(L, "simpleMatch", &Token::simpleMatch);
-    lua_tinker::def(L, "Match", &Token::Match);
-    lua_tinker::def(L, "getStrLength", &Token::getStrLength);
-    lua_tinker::def(L, "getStrSize", &Token::getStrSize);
-    lua_tinker::def(L, "getCharAt", &Token::getCharAt);
-
-    lua_tinker::class_def<Token>(L, "type", (GetTypeFunc)&Token::type);
-    lua_tinker::class_def<Token>(L, "isKeyword", (GetBoolFunc)&Token::isKeyword);
-    lua_tinker::class_def<Token>(L, "isName", &Token::isName);
-    lua_tinker::class_def<Token>(L, "isUpperCaseName", &Token::isUpperCaseName);
-    lua_tinker::class_def<Token>(L, "isLiteral", &Token::isLiteral);
-    lua_tinker::class_def<Token>(L, "isNumber", &Token::isNumber);
-    lua_tinker::class_def<Token>(L, "isOp", &Token::isOp);
-    lua_tinker::class_def<Token>(L, "isConstOp", &Token::isConstOp);
-    lua_tinker::class_def<Token>(L, "isExtendedOp", &Token::isExtendedOp);
-    lua_tinker::class_def<Token>(L, "isArithmeticalOp", &Token::isArithmeticalOp);
-    lua_tinker::class_def<Token>(L, "isComparisonOp", &Token::isComparisonOp);
-    lua_tinker::class_def<Token>(L, "isAssignmentOp", &Token::isAssignmentOp);
-    lua_tinker::class_def<Token>(L, "isBoolean", &Token::isBoolean);
-
-    lua_tinker::class_def<Token>(L, "isUnsigned", (GetBoolFunc)&Token::isUnsigned);
-    lua_tinker::class_def<Token>(L, "isSigned", (GetBoolFunc)&Token::isSigned);
-    lua_tinker::class_def<Token>(L, "isPointerCompare", (GetBoolFunc)&Token::isPointerCompare);
-    lua_tinker::class_def<Token>(L, "isLong", (GetBoolFunc)&Token::isLong);
-    lua_tinker::class_def<Token>(L, "isStandardType", (GetBoolFunc)&Token::isStandardType);
-    lua_tinker::class_def<Token>(L, "isExpandedMacro", (GetBoolFunc)&Token::isExpandedMacro);
-    lua_tinker::class_def<Token>(L, "isAttributeConstructor", (GetBoolFunc)&Token::isAttributeConstructor);
-    lua_tinker::class_def<Token>(L, "isAttributeDestructor", (GetBoolFunc)&Token::isAttributeDestructor);
-    lua_tinker::class_def<Token>(L, "isAttributeUnused", (GetBoolFunc)&Token::isAttributeUnused);
-    lua_tinker::class_def<Token>(L, "isAttributeUsed", (GetBoolFunc)&Token::isAttributeUsed);
-    lua_tinker::class_def<Token>(L, "isAttributePure", (GetBoolFunc)&Token::isAttributePure);
-    lua_tinker::class_def<Token>(L, "isAttributeConst", (GetBoolFunc)&Token::isAttributeConst);
-    lua_tinker::class_def<Token>(L, "isAttributeNothrow", (GetBoolFunc)&Token::isAttributeNothrow);
-    lua_tinker::class_def<Token>(L, "isDeclspecNothrow", (GetBoolFunc)&Token::isDeclspecNothrow);
-
-    typedef Token *(*findsimplematch2)(Token *tok, const char pattern[]);
-    typedef Token *(*findsimplematch3)(Token *tok, const char pattern[], const Token *end);
-    typedef Token *(*findmatch3)(Token *tok, const char pattern[], unsigned int varId);
-    typedef Token *(*findmatch4)(Token *tok, const char pattern[], const Token *end, unsigned int varId);
-    //lua_tinker::def(L, "findsimplematch", (findsimplematch2)&Token::findsimplematch);
-    lua_tinker::def(L, "findsimplematch", (findsimplematch3)&Token::findsimplematch);
-    //lua_tinker::def(L, "findmatch", (findmatch3)&Token::findmatch);
-    lua_tinker::def(L, "findmatch", (findmatch4)&Token::findmatch);
-    lua_tinker::def(L, "multiCompare", &Token::multiCompare);
-
-    lua_tinker::class_def<Token>(L, "linenr", (GetUIntFunc)&Token::linenr);
-    lua_tinker::class_def<Token>(L, "fileIndex", (GetUIntFunc)&Token::fileIndex);
-    lua_tinker::class_def<Token>(L, "next", (GetTokenFunc)&Token::next);
-    lua_tinker::class_def<Token>(L, "previous", (GetTokenFunc)&Token::previous);
-    lua_tinker::class_def<Token>(L, "varId", (GetUIntFunc)&Token::varId);
+    typedef const std::string& (Token::*GetStringFunc)() const;
     typedef void (Token::*printOut1)(const char *title) const;
-    lua_tinker::class_def<Token>(L, "printOut", (printOut1)&Token::printOut);
-    lua_tinker::class_def<Token>(L, "link", (GetTokenFunc)&Token::link);
-    lua_tinker::class_def<Token>(L, "scope", (GetScopeFunc)&Token::scope);
-    lua_tinker::class_def<Token>(L, "function", (GetFunctionFunc)&Token::function);
-    lua_tinker::class_def<Token>(L, "variable", (GetVariableFunc)&Token::variable);
-    lua_tinker::class_def<Token>(L, "strValue", &Token::strValue);
-    lua_tinker::class_def<Token>(L, "progressValue", &Token::progressValue);
-    lua_tinker::class_def<Token>(L, "nextArgument", &Token::nextArgument);
-    lua_tinker::class_def<Token>(L, "findClosingBracket", (GetConstTokenFunc)&Token::findClosingBracket);
-    lua_tinker::class_def<Token>(L, "originalName", &Token::originalName);
-    lua_tinker::class_def<Token>(L, "getValue", &Token::getValue);
-    lua_tinker::class_def<Token>(L, "getMaxValue", &Token::getMaxValue);
-    lua_tinker::class_def<Token>(L, "getValueLE", &Token::getValueLE);
-    lua_tinker::class_def<Token>(L, "getValueGE", &Token::getValueGE);
-    lua_tinker::class_def<Token>(L, "getValueTokenMaxStrLength", &Token::getValueTokenMaxStrLength);
-    lua_tinker::class_def<Token>(L, "getValueTokenMinStrSize", &Token::getValueTokenMinStrSize);
-    lua_tinker::class_def<Token>(L, "getValueTokenDeadPointer", &Token::getValueTokenDeadPointer);
+
+    fflua_register_t<Token>(L, "Token")
+        .def((GetStringFunc)&Token::str, "str")
+        .def((GetTokenFuncInt)&Token::tokAt, "tokAt")
+    .def((GetTokenFuncInt)&Token::linkAt, "linkAt")
+    .def(&Token::strAt, "strAt")
+    .def((GetTypeFunc)&Token::type, "type")
+    .def((GetBoolFunc)&Token::isKeyword, "isKeyword")
+    .def(&Token::isName, "isName")
+    .def(&Token::isUpperCaseName, "isUpperCaseName")
+    .def(&Token::isLiteral, "isLiteral")
+    .def(&Token::isNumber, "isNumber")
+    .def(&Token::isOp, "isOp")
+    .def(&Token::isConstOp, "isConstOp")
+    .def(&Token::isExtendedOp, "isExtendedOp")
+    .def(&Token::isArithmeticalOp, "isArithmeticalOp")
+    .def(&Token::isComparisonOp, "isComparisonOp")
+    .def(&Token::isAssignmentOp, "isAssignmentOp")
+    .def(&Token::isBoolean, "isBoolean")
+
+    .def((GetBoolFunc)&Token::isUnsigned, "isUnsigned")
+    .def((GetBoolFunc)&Token::isSigned, "isSigned")
+    .def((GetBoolFunc)&Token::isPointerCompare, "isPointerCompare")
+    .def((GetBoolFunc)&Token::isLong, "isLong")
+    .def((GetBoolFunc)&Token::isStandardType, "isStandardType")
+    .def((GetBoolFunc)&Token::isExpandedMacro, "isExpandedMacro")
+    .def((GetBoolFunc)&Token::isAttributeConstructor, "isAttributeConstructor")
+    .def((GetBoolFunc)&Token::isAttributeDestructor, "isAttributeDestructor")
+    .def((GetBoolFunc)&Token::isAttributeUnused, "isAttributeUnused")
+    .def((GetBoolFunc)&Token::isAttributeUsed, "isAttributeUsed")
+    .def((GetBoolFunc)&Token::isAttributePure, "isAttributePure")
+    .def((GetBoolFunc)&Token::isAttributeConst, "isAttributeConst")
+    .def((GetBoolFunc)&Token::isAttributeNothrow, "isAttributeNothrow")
+    .def((GetBoolFunc)&Token::isDeclspecNothrow, "isDeclspecNothrow")
+
+
+    .def((GetUIntFunc)&Token::linenr, "linenr")
+    .def((GetUIntFunc)&Token::fileIndex, "fileIndex")
+    .def((GetTokenFunc)&Token::next, "next")
+    .def((GetTokenFunc)&Token::previous, "previous")
+    .def((GetUIntFunc)&Token::varId, "varId")
+    .def((printOut1)&Token::printOut, "printOut")
+    .def((GetTokenFunc)&Token::link, "link")
+    .def((GetScopeFunc)&Token::scope, "scope")
+    .def((GetFunctionFunc)&Token::function, "function")
+    .def((GetVariableFunc)&Token::variable, "variable")
+    .def(&Token::strValue, "strValue")
+    .def(&Token::progressValue, "progressValue")
+    .def(&Token::nextArgument, "nextArgument")
+    .def((GetConstTokenFunc)&Token::findClosingBracket, "findClosingBracket")
+    .def((GetStringFunc)&Token::originalName, "originalName")
+    .def(&Token::getValue, "getValue")
+    .def(&Token::getMaxValue, "getMaxValue")
+    .def(&Token::getValueLE, "getValueLE")
+    .def(&Token::getValueGE, "getValueGE")
+    .def(&Token::getValueTokenMaxStrLength, "getValueTokenMaxStrLength")
+    .def(&Token::getValueTokenMinStrSize, "getValueTokenMinStrSize")
+    .def(&Token::getValueTokenDeadPointer, "getValueTokenDeadPointer");
 
     lua_tinker::table* tokenType = new lua_tinker::table(L, "TokenType");
     tokenType->set("eVariable", Token::eVariable);
@@ -132,15 +119,31 @@ void defToken(lua_State* L) {
     tokenType->set("eOther", Token::eOther);
     tokenType->set("eNone", Token::eNone);
 
+    typedef Token *(*findsimplematch2)(Token *tok, const char pattern[]);
+    typedef Token *(*findsimplematch3)(Token *tok, const char pattern[], const Token *end);
+    typedef Token *(*findmatch3)(Token *tok, const char pattern[], unsigned int varId);
+    typedef Token *(*findmatch4)(Token *tok, const char pattern[], const Token *end, unsigned int varId);
+    //lua_tinker::def(L, "findsimplematch", (findsimplematch2)&Token::findsimplematch);
+    lua_tinker::def(L, "findsimplematch", (findsimplematch3)&Token::findsimplematch);
+    //lua_tinker::def(L, "findmatch", (findmatch3)&Token::findmatch);
+    lua_tinker::def(L, "findmatch", (findmatch4)&Token::findmatch);
+    lua_tinker::def(L, "multiCompare", &Token::multiCompare);
+
     lua_tinker::def(L, "IsSameToken", &IsSameToken);
+    lua_tinker::def(L, "simpleMatch", &Token::simpleMatch);
+    lua_tinker::def(L, "Match", &Token::Match);
+    lua_tinker::def(L, "getStrLength", &Token::getStrLength);
+    lua_tinker::def(L, "getStrSize", &Token::getStrSize);
+    lua_tinker::def(L, "getCharAt", &Token::getCharAt);
+
 }
 
 void defTokenizer(lua_State* L)
 {
-    lua_tinker::class_add<Tokenizer>(L, "Tokenizer");
-    lua_tinker::class_def<Tokenizer>(L, "isC", &Tokenizer::isC);
-    lua_tinker::class_def<Tokenizer>(L, "isCPP", &Tokenizer::isCPP);
-    lua_tinker::class_def<Tokenizer>(L, "tokens", &Tokenizer::tokens);
+    fflua_register_t<Tokenizer>(L, "Tokenizer")
+    .def(&Tokenizer::isC, "isC")
+    .def(&Tokenizer::isCPP, "isCPP")
+    .def(&Tokenizer::tokens, "tokens");
 }
 
 void defSeverity(lua_State* L)
@@ -161,40 +164,40 @@ void defScope(lua_State* L)
     typedef const Scope *(Scope::*GetScopeFunc)(const std::string&) const;
     typedef const Type *(Scope::*GetTypeFunc)(const std::string&) const;
 
-    lua_tinker::class_add<Scope>(L, "Scope");
-    lua_tinker::class_mem<Scope>(L, "check", &Scope::check);
-    lua_tinker::class_mem<Scope>(L, "className", &Scope::className);
-    lua_tinker::class_mem<Scope>(L, "classDef", &Scope::classDef);
-    lua_tinker::class_mem<Scope>(L, "classStart", &Scope::classStart);
-    lua_tinker::class_mem<Scope>(L, "classEnd", &Scope::classEnd);
-    lua_tinker::class_mem<Scope>(L, "functionList", &Scope::functionList);
-    lua_tinker::class_mem<Scope>(L, "varlist", &Scope::varlist);
-    lua_tinker::class_mem<Scope>(L, "nestedIn", &Scope::nestedIn);
-    lua_tinker::class_mem<Scope>(L, "nestedList", &Scope::nestedList);
-    lua_tinker::class_mem<Scope>(L, "numConstructors", &Scope::numConstructors);
-    lua_tinker::class_mem<Scope>(L, "numCopyOrMoveConstructors", &Scope::numCopyOrMoveConstructors);
-    lua_tinker::class_mem<Scope>(L, "usingList", &Scope::usingList);
-    lua_tinker::class_mem<Scope>(L, "type", &Scope::type);
-    lua_tinker::class_mem<Scope>(L, "definedType", &Scope::definedType);
-    lua_tinker::class_mem<Scope>(L, "definedTypes", &Scope::definedTypes);
-    lua_tinker::class_mem<Scope>(L, "functionOf", &Scope::functionOf);
-    lua_tinker::class_mem<Scope>(L, "function", &Scope::function);
+    fflua_register_t<Scope>(L, "Scope")
+    .def(&Scope::check, "check")
+    .def(&Scope::className, "className")
+    .def(&Scope::classDef, "classDef")
+    .def(&Scope::classStart, "classStart")
+    .def(&Scope::classEnd, "classEnd")
+    .def(&Scope::functionList, "functionList")
+    .def(&Scope::varlist, "varlist")
+    .def(&Scope::nestedIn, "nestedIn")
+    .def(&Scope::nestedList, "nestedList")
+    .def(&Scope::numConstructors, "numConstructors")
+    .def(&Scope::numCopyOrMoveConstructors, "numCopyOrMoveConstructors")
+    .def(&Scope::usingList, "usingList")
+    .def(&Scope::type, "type")
+    .def(&Scope::definedType, "definedType")
+    .def(&Scope::definedTypes, "definedTypes")
+    .def(&Scope::functionOf, "functionOf")
+    .def(&Scope::function, "function")
 
-    lua_tinker::class_def<Scope>(L, "isClassOrStruct", &Scope::isClassOrStruct);
-    lua_tinker::class_def<Scope>(L, "isExecutable", &Scope::isExecutable);
-    lua_tinker::class_def<Scope>(L, "isLocal", &Scope::isLocal);
-    lua_tinker::class_def<Scope>(L, "findFunction", &Scope::findFunction);
-    lua_tinker::class_def<Scope>(L, "findInNestedList", &Scope::findInNestedList);
-    lua_tinker::class_def<Scope>(L, "findRecordInNestedList", (GetScopeFunc)&Scope::findRecordInNestedList);
-    lua_tinker::class_def<Scope>(L, "findType", (GetTypeFunc)&Scope::findType);
-    lua_tinker::class_def<Scope>(L, "findInNestedListRecursive", &Scope::findInNestedListRecursive);
-    lua_tinker::class_def<Scope>(L, "getVariableList", &Scope::getVariableList);
-    lua_tinker::class_def<Scope>(L, "getDestructor", &Scope::getDestructor);
-    lua_tinker::class_def<Scope>(L, "getNestedNonFunctions", &Scope::getNestedNonFunctions);
-    lua_tinker::class_def<Scope>(L, "hasDefaultConstructor", &Scope::hasDefaultConstructor);
-    lua_tinker::class_def<Scope>(L, "defaultAccess", &Scope::defaultAccess);
-    lua_tinker::class_def<Scope>(L, "checkVariable", &Scope::checkVariable);
-    lua_tinker::class_def<Scope>(L, "getVariable", &Scope::getVariable);
+    .def(&Scope::isClassOrStruct, "isClassOrStruct")
+    .def(&Scope::isExecutable, "isExecutable")
+    .def(&Scope::isLocal, "isLocal")
+    .def(&Scope::findFunction, "findFunction")
+    .def(&Scope::findInNestedList, "findInNestedList")
+    .def((GetScopeFunc)&Scope::findRecordInNestedList, "findRecordInNestedList")
+    .def((GetTypeFunc)&Scope::findType, "findType")
+    .def(&Scope::findInNestedListRecursive, "findInNestedListRecursive")
+    .def(&Scope::getVariableList, "getVariableList")
+    .def(&Scope::getDestructor, "getDestructor")
+    .def(&Scope::getNestedNonFunctions, "getNestedNonFunctions")
+    .def(&Scope::hasDefaultConstructor, "hasDefaultConstructor")
+    .def(&Scope::defaultAccess, "defaultAccess")
+    .def(&Scope::checkVariable, "checkVariable")
+    .def(&Scope::getVariable, "getVariable");
 
     lua_tinker::table* sopeType = new lua_tinker::table(L, "ScopeType");
     sopeType->set("eGlobal", Scope::eGlobal);
@@ -217,66 +220,66 @@ void defScope(lua_State* L)
 
 void defType(lua_State* L)
 {
-    lua_tinker::class_add<Type>(L, "Type");
-    lua_tinker::class_mem<Type>(L, "classDef", &Type::classDef);
-    lua_tinker::class_mem<Type>(L, "classScope", &Type::classScope);
-    lua_tinker::class_mem<Type>(L, "enclosingScope", &Type::enclosingScope);
-    lua_tinker::class_mem<Type>(L, "derivedFrom", &Type::derivedFrom);
-    lua_tinker::class_mem<Type>(L, "friendList", &Type::friendList);
+    fflua_register_t<Type>(L, "Type")
+    .def(&Type::classDef, "classDef")
+    .def(&Type::classScope, "classScope")
+    .def(&Type::enclosingScope, "enclosingScope")
+    .def(&Type::derivedFrom, "derivedFrom")
+    .def(&Type::friendList, "friendList")
 
-    lua_tinker::class_def<Type>(L, "name", &Type::name);
-    lua_tinker::class_def<Type>(L, "initBaseInfo", &Type::initBaseInfo);
-    lua_tinker::class_def<Type>(L, "getFunction", &Type::getFunction);
-    lua_tinker::class_def<Type>(L, "hasCircularDependencies", &Type::hasCircularDependencies);
+    .def(&Type::name, "name")
+    .def(&Type::initBaseInfo, "initBaseInfo")
+    .def(&Type::getFunction, "getFunction")
+    .def(&Type::hasCircularDependencies, "hasCircularDependencies");
 }
 
 void defFunction(lua_State* L)
 {
-    lua_tinker::class_add<Function>(L, "Function");
+    fflua_register_t<Function>(L, "Function")
 
-    lua_tinker::class_mem<Function>(L, "tokenDef", &Function::tokenDef);
-    lua_tinker::class_mem<Function>(L, "argDef", &Function::argDef);
-    lua_tinker::class_mem<Function>(L, "token", &Function::token);
-    lua_tinker::class_mem<Function>(L, "arg", &Function::arg);
-    lua_tinker::class_mem<Function>(L, "retDef", &Function::retDef);
-    lua_tinker::class_mem<Function>(L, "retType", &Function::retType);
-    lua_tinker::class_mem<Function>(L, "functionScope", &Function::functionScope);
-    lua_tinker::class_mem<Function>(L, "nestedIn", &Function::nestedIn);
-    lua_tinker::class_mem<Function>(L, "argumentList", &Function::argumentList);
-    lua_tinker::class_mem<Function>(L, "initArgCount", &Function::initArgCount);
-    lua_tinker::class_mem<Function>(L, "type", &Function::type);
-    lua_tinker::class_mem<Function>(L, "access", &Function::access);
-    lua_tinker::class_mem<Function>(L, "hasBody", &Function::hasBody);
-    lua_tinker::class_mem<Function>(L, "isInline", &Function::isInline);
-    lua_tinker::class_mem<Function>(L, "isConst", &Function::isConst);
-    lua_tinker::class_mem<Function>(L, "isVirtual", &Function::isVirtual);
-    lua_tinker::class_mem<Function>(L, "isPure", &Function::isPure);
-    lua_tinker::class_mem<Function>(L, "isStatic", &Function::isStatic);
-    lua_tinker::class_mem<Function>(L, "isFriend", &Function::isFriend);
-    lua_tinker::class_mem<Function>(L, "isExplicit", &Function::isExplicit);
-    lua_tinker::class_mem<Function>(L, "isDefault", &Function::isDefault);
-    lua_tinker::class_mem<Function>(L, "isDelete", &Function::isDelete);
-    lua_tinker::class_mem<Function>(L, "isNoExcept", &Function::isNoExcept);
-    lua_tinker::class_mem<Function>(L, "isThrow", &Function::isThrow);
-    lua_tinker::class_mem<Function>(L, "isOperator", &Function::isOperator);
-    lua_tinker::class_mem<Function>(L, "noexceptArg", &Function::noexceptArg);
-    lua_tinker::class_mem<Function>(L, "throwArg", &Function::throwArg);
+    .def(&Function::tokenDef, "tokenDef")
+    .def(&Function::argDef, "argDef")
+    .def(&Function::token, "token")
+    .def(&Function::arg, "arg")
+    .def(&Function::retDef, "retDef")
+    .def(&Function::retType, "retType")
+    .def(&Function::functionScope, "functionScope")
+    .def(&Function::nestedIn, "nestedIn")
+    .def(&Function::argumentList, "argumentList")
+    .def(&Function::initArgCount, "initArgCount")
+    .def(&Function::type, "type")
+    .def(&Function::access, "access")
+    .def(&Function::hasBody, "hasBody")
+    .def(&Function::isInline, "isInline")
+    .def(&Function::isConst, "isConst")
+    .def(&Function::isVirtual, "isVirtual")
+    .def(&Function::isPure, "isPure")
+    .def(&Function::isStatic, "isStatic")
+    .def(&Function::isFriend, "isFriend")
+    .def(&Function::isExplicit, "isExplicit")
+    .def(&Function::isDefault, "isDefault")
+    .def(&Function::isDelete, "isDelete")
+    .def(&Function::isNoExcept, "isNoExcept")
+    .def(&Function::isThrow, "isThrow")
+    .def(&Function::isOperator, "isOperator")
+    .def(&Function::noexceptArg, "noexceptArg")
+    .def(&Function::throwArg, "throwArg")
 
-    lua_tinker::class_def<Function>(L, "name", &Function::name);
-    lua_tinker::class_def<Function>(L, "argCount", &Function::argCount);
-    lua_tinker::class_def<Function>(L, "minArgCount", &Function::minArgCount);
-    lua_tinker::class_def<Function>(L, "getArgumentVar", &Function::getArgumentVar);
-    lua_tinker::class_def<Function>(L, "initializedArgCount", &Function::initializedArgCount);
-    lua_tinker::class_def<Function>(L, "addArguments", &Function::addArguments);
-    lua_tinker::class_def<Function>(L, "isImplicitlyVirtual", &Function::isImplicitlyVirtual);
-    lua_tinker::class_def<Function>(L, "isConstructor", &Function::isConstructor);
-    lua_tinker::class_def<Function>(L, "isDestructor", &Function::isDestructor);
-    lua_tinker::class_def<Function>(L, "isAttributeConstructor", &Function::isAttributeConstructor);
-    lua_tinker::class_def<Function>(L, "isAttributeDestructor", &Function::isAttributeDestructor);
-    lua_tinker::class_def<Function>(L, "isAttributePure", &Function::isAttributePure);
-    lua_tinker::class_def<Function>(L, "isAttributeConst", &Function::isAttributeConst);
-    lua_tinker::class_def<Function>(L, "isAttributeNothrow", &Function::isAttributeNothrow);
-    lua_tinker::class_def<Function>(L, "isDeclspecNothrow", &Function::isDeclspecNothrow);
+    .def(&Function::name, "name")
+    .def(&Function::argCount, "argCount")
+    .def(&Function::minArgCount, "minArgCount")
+    .def(&Function::getArgumentVar, "getArgumentVar")
+    .def(&Function::initializedArgCount, "initializedArgCount")
+    .def(&Function::addArguments, "addArguments")
+    .def(&Function::isImplicitlyVirtual, "isImplicitlyVirtual")
+    .def(&Function::isConstructor, "isConstructor")
+    .def(&Function::isDestructor, "isDestructor")
+    .def(&Function::isAttributeConstructor, "isAttributeConstructor")
+    .def(&Function::isAttributeDestructor, "isAttributeDestructor")
+    .def(&Function::isAttributePure, "isAttributePure")
+    .def(&Function::isAttributeConst, "isAttributeConst")
+    .def(&Function::isAttributeNothrow, "isAttributeNothrow")
+    .def(&Function::isDeclspecNothrow, "isDeclspecNothrow");
 
     lua_tinker::table* functionType = new lua_tinker::table(L, "FunctionType");
     functionType->set("eConstructor", Function::eConstructor);
@@ -289,71 +292,70 @@ void defFunction(lua_State* L)
 
 void defVariable(lua_State* L)
 {
-    lua_tinker::class_add<Variable>(L, "Variable");
-    
     typedef const Type *(Variable::*GetTypeFunc)() const;
+    typedef bool(Variable::*GetBoolFunc)() const;
 
-    lua_tinker::class_def<Variable>(L, "nameToken", &Variable::nameToken);
-    lua_tinker::class_def<Variable>(L, "typeStartToken", &Variable::typeStartToken);
-    lua_tinker::class_def<Variable>(L, "typeEndToken", &Variable::typeEndToken);
-    lua_tinker::class_def<Variable>(L, "name", &Variable::name);
-    lua_tinker::class_def<Variable>(L, "declarationId", &Variable::declarationId);
-    lua_tinker::class_def<Variable>(L, "index", &Variable::index);
-    lua_tinker::class_def<Variable>(L, "isPublic", &Variable::isPublic);
-    lua_tinker::class_def<Variable>(L, "isProtected", &Variable::isProtected);
-    lua_tinker::class_def<Variable>(L, "isPrivate", &Variable::isPrivate);
-    lua_tinker::class_def<Variable>(L, "isGlobal", &Variable::isGlobal);
-    lua_tinker::class_def<Variable>(L, "isNamespace", &Variable::isNamespace);
-    lua_tinker::class_def<Variable>(L, "isArgument", &Variable::isArgument);
-    lua_tinker::class_def<Variable>(L, "isLocal", &Variable::isLocal);
-    lua_tinker::class_def<Variable>(L, "isMutable", &Variable::isMutable);
-    lua_tinker::class_def<Variable>(L, "isStatic", &Variable::isStatic);
-    lua_tinker::class_def<Variable>(L, "isExtern", &Variable::isExtern);
-    lua_tinker::class_def<Variable>(L, "isConst", &Variable::isConst);
-    lua_tinker::class_def<Variable>(L, "isThrow", &Variable::isThrow);
-    lua_tinker::class_def<Variable>(L, "isClass", &Variable::isClass);
-    lua_tinker::class_def<Variable>(L, "isArray", &Variable::isArray);
-    lua_tinker::class_def<Variable>(L, "isPointer", &Variable::isPointer);
-    lua_tinker::class_def<Variable>(L, "isArrayOrPointer", &Variable::isArrayOrPointer);
-    lua_tinker::class_def<Variable>(L, "isReference", &Variable::isReference);
-    lua_tinker::class_def<Variable>(L, "isRValueReference", &Variable::isRValueReference);
-    lua_tinker::class_def<Variable>(L, "hasDefault", &Variable::hasDefault);
-    lua_tinker::class_def<Variable>(L, "type", (GetTypeFunc)&Variable::type);
-    lua_tinker::class_def<Variable>(L, "typeScope", &Variable::typeScope);
-    lua_tinker::class_def<Variable>(L, "scope", &Variable::scope);
-    lua_tinker::class_def<Variable>(L, "dimensions", &Variable::dimensions);
-    lua_tinker::class_def<Variable>(L, "dimension", &Variable::dimension);
-    lua_tinker::class_def<Variable>(L, "dimensionKnown", &Variable::dimensionKnown);
-    lua_tinker::class_def<Variable>(L, "isStlType", &Variable::isStlType);
-    lua_tinker::class_def<Variable>(L, "isStlStringType", &Variable::isStlStringType);
-    lua_tinker::class_def<Variable>(L, "isFloatingType", &Variable::isFloatingType);
-    lua_tinker::class_def<Variable>(L, "isIntegralType", &Variable::isIntegralType);
+    fflua_register_t<Variable>(L, "Variable")
+    .def(&Variable::nameToken, "nameToken")
+    .def(&Variable::typeStartToken, "typeStartToken")
+    .def(&Variable::typeEndToken, "typeEndToken")
+    .def(&Variable::name, "name")
+    .def(&Variable::declarationId, "declarationId")
+    .def(&Variable::index, "index")
+    .def(&Variable::isPublic, "isPublic")
+    .def(&Variable::isProtected, "isProtected")
+    .def(&Variable::isPrivate, "isPrivate")
+    .def(&Variable::isGlobal, "isGlobal")
+    .def(&Variable::isNamespace, "isNamespace")
+    .def(&Variable::isArgument, "isArgument")
+    .def(&Variable::isLocal, "isLocal")
+    .def(&Variable::isMutable, "isMutable")
+    .def(&Variable::isStatic, "isStatic")
+    .def(&Variable::isExtern, "isExtern")
+    .def(&Variable::isConst, "isConst")
+    .def(&Variable::isThrow, "isThrow")
+    .def(&Variable::isClass, "isClass")
+    .def(&Variable::isArray, "isArray")
+    .def(&Variable::isPointer, "isPointer")
+    .def(&Variable::isArrayOrPointer, "isArrayOrPointer")
+    .def(&Variable::isReference, "isReference")
+    .def(&Variable::isRValueReference, "isRValueReference")
+    .def(&Variable::hasDefault, "hasDefault")
+    .def((GetTypeFunc)&Variable::type, "type")
+    .def(&Variable::typeScope, "typeScope")
+    .def(&Variable::scope, "scope")
+    .def(&Variable::dimensions, "dimensions")
+    .def(&Variable::dimension, "dimension")
+    .def(&Variable::dimensionKnown, "dimensionKnown")
+    .def((GetBoolFunc)&Variable::isStlType, "isStlType")
+    .def(&Variable::isStlStringType, "isStlStringType")
+    .def(&Variable::isFloatingType, "isFloatingType")
+    .def(&Variable::isIntegralType, "isIntegralType");
 }
 
 void defSymbolDatabase(lua_State* L)
 {
-    lua_tinker::class_add<SymbolDatabase>(L, "SymbolDatabase");
-
     typedef const Type *(SymbolDatabase::*GetTypeFunc)(const Token *, const Scope *) const;
     typedef const Scope *(SymbolDatabase::*GetScopeFunc)(const Token *, const Scope *) const;
 
-    lua_tinker::class_mem<SymbolDatabase>(L, "scopeList", &SymbolDatabase::scopeList);
-    lua_tinker::class_mem<SymbolDatabase>(L, "functionScopes", &SymbolDatabase::functionScopes);
-    lua_tinker::class_mem<SymbolDatabase>(L, "classAndStructScopes", &SymbolDatabase::classAndStructScopes);
-    lua_tinker::class_mem<SymbolDatabase>(L, "typeList", &SymbolDatabase::typeList);
+    fflua_register_t<SymbolDatabase>(L, "SymbolDatabase")
+    .def(&SymbolDatabase::scopeList, "scopeList")
+    .def(&SymbolDatabase::functionScopes, "functionScopes")
+    .def(&SymbolDatabase::classAndStructScopes, "classAndStructScopes")
+    .def(&SymbolDatabase::typeList, "typeList")
 
-    lua_tinker::class_def<SymbolDatabase>(L, "findVariableType", &SymbolDatabase::findVariableType);
-    lua_tinker::class_def<SymbolDatabase>(L, "findFunction", &SymbolDatabase::findFunction);
-    lua_tinker::class_def<SymbolDatabase>(L, "findScopeByName", &SymbolDatabase::findScopeByName);
-    lua_tinker::class_def<SymbolDatabase>(L, "findType", (GetTypeFunc)&SymbolDatabase::findType);
-    lua_tinker::class_def<SymbolDatabase>(L, "findScope", (GetScopeFunc)&SymbolDatabase::findScope);
-    lua_tinker::class_def<SymbolDatabase>(L, "isClassOrStruct", &SymbolDatabase::isClassOrStruct);
-    lua_tinker::class_def<SymbolDatabase>(L, "getVariableFromVarId", &SymbolDatabase::getVariableFromVarId);
-    lua_tinker::class_def<SymbolDatabase>(L, "getVariableListSize", &SymbolDatabase::getVariableListSize);
-    lua_tinker::class_def<SymbolDatabase>(L, "debugMessage", &SymbolDatabase::debugMessage);
-    lua_tinker::class_def<SymbolDatabase>(L, "printOut", &SymbolDatabase::printOut);
-    lua_tinker::class_def<SymbolDatabase>(L, "printVariable", &SymbolDatabase::printVariable);
-    lua_tinker::class_def<SymbolDatabase>(L, "printXml", &SymbolDatabase::printXml);
+    .def(&SymbolDatabase::findVariableType, "findVariableType")
+    .def(&SymbolDatabase::findFunction, "findFunction")
+    .def(&SymbolDatabase::findScopeByName, "findScopeByName")
+    .def((GetTypeFunc)&SymbolDatabase::findType, "findType")
+    .def((GetScopeFunc)&SymbolDatabase::findScope, "findScope")
+    .def(&SymbolDatabase::isClassOrStruct, "isClassOrStruct")
+    .def(&SymbolDatabase::getVariableFromVarId, "getVariableFromVarId")
+    .def(&SymbolDatabase::getVariableListSize, "getVariableListSize")
+    .def(&SymbolDatabase::debugMessage, "debugMessage")
+    .def(&SymbolDatabase::printOut, "printOut")
+    .def(&SymbolDatabase::printVariable, "printVariable")
+    .def(&SymbolDatabase::printXml, "printXml");
 }
 
 void LuaPlugin::quoteElogStringArg()
@@ -396,7 +398,7 @@ void LuaPlugin::quoteElogStringArg()
     return;
     const Token *tok = findElogPattern(_tokenizer->tokens());
     const Token *endTok = tok ? tok->next()->link() : nullptr;
- 
+
     while (tok && endTok) {
         for (const Token* tmp = tok->next()->next(); tmp != endTok; tmp = tmp->next()) {
             if (tmp->str() == "(")
@@ -411,7 +413,7 @@ void LuaPlugin::quoteElogStringArg()
             }
         }
 
-        
+
         tok = findElogPattern(endTok->next());
         endTok = tok ? tok->next()->link() : nullptr;
     }
@@ -423,7 +425,7 @@ void LuaPlugin::quoteElogStringArgWith_SError(const Token *tok, const std::strin
 {
     std::string literal_str = tok ? tok->str() : "null";
     reportError(tok, Severity::error,
-        "quoteElogStringArgWith_S", 
+        "quoteElogStringArgWith_S",
         "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().\n"
         "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().");
 }
