@@ -9,7 +9,8 @@ do
 		_checkPlugin:reportError(tok, SeverityType.error,
 			"quoteElogStringArgWith_S", 
 			"You should quote literal string argument  " .. literal_str .. "  of '" .. elogName .. "' with macro _S().\n" ..
-			"You should quote literal string argument  " .. literal_str .. "  of '" .. elogName .. "' with macro _S().");
+			"You should quote literal string argument  " .. literal_str .. "  of '" .. elogName .. "' with macro _S().",
+			false);
 	end
 	
 	tok = findElogPattern(_tokenizer:tokens());
