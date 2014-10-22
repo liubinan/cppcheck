@@ -541,7 +541,7 @@ int Token::firstWordLen(const char *str)
     return len;
 }
 
-bool Token::Match(const Token *tok, const char pattern[], unsigned int varid)
+bool Token::Match(const Token *tok, const char* pattern, unsigned int varid)
 {
     const char *p = pattern;
     while (*p) {

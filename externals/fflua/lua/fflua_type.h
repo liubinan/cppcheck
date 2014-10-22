@@ -10,6 +10,7 @@
 #include <list>
 #include <set>
 #include <map>
+#include <type_traits>
 using namespace std;
 
 namespace ff
@@ -95,7 +96,7 @@ public:
     }
     static string dump_error(lua_State* ls_, const char *fmt, ...)
     {
-        string ret;
+        ostringstream ret;
         char buff[1024];
 
         va_list argp;
@@ -103,11 +104,9 @@ public:
         vsnprintf(buff, sizeof(buff), fmt, argp);
         va_end(argp);
 
-        ret = buff;
-        snprintf(buff, sizeof(buff), " tracback:%s", lua_tostring(ls_, -1));
-        ret += buff;
+        ret << buff << " tracback:" << lua_tostring(ls_, -1);
 
-        return ret;
+        return ret.str();
     }
 };
 
@@ -167,7 +166,7 @@ struct reference_traits_t;
 template<typename ARG_TYPE>
 struct reference_traits_t
 {
-    typedef ARG_TYPE arg_type_t;
+    typedef typename std::conditional<std::is_enum<ARG_TYPE>::value, int, ARG_TYPE>::type arg_type_t;
 };
 
 template<>
@@ -230,6 +229,15 @@ template <>
 struct init_value_traits_t<const string&>
 {
     inline static const char* value(){ return ""; }
+};
+
+template<typename USER_TYPE>
+struct enum_traits_t;
+
+template<typename USER_TYPE>
+struct enum_traits_t
+{
+    typedef typename std::conditional<std::is_enum<USER_TYPE>::value, int, USER_TYPE>::type type;
 };
 
 template<typename T>
@@ -632,6 +640,11 @@ struct lua_op_t<void*>
 {
     static void push_stack(lua_State* ls_, void* arg_)
     {
+        if (arg_ == nullptr)
+        {
+            lua_pushnil(ls_);
+            return;
+        }
         lua_pushlightuserdata(ls_, arg_);
     }
 
@@ -639,10 +652,11 @@ struct lua_op_t<void*>
     {
         if (!lua_isuserdata(ls_, pos_))
         {
-            char buff[128];
-            snprintf(buff, sizeof(buff), "userdata param expected, but type<%s> provided",
-                                         lua_typename(ls_, lua_type(ls_, pos_)));
-            printf("%s\n", buff);
+            ostringstream ostr;
+            ostr << "userdata param expected, but type<" 
+                << lua_typename(ls_, lua_type(ls_, pos_)) 
+                << "> provided";
+            luaL_argerror(ls_, 1, ostr.str().c_str());
             return -1;
         }
 
@@ -667,6 +681,11 @@ struct lua_op_t<T*>
 {
     static void push_stack(lua_State* ls_, T* arg_)
     {
+        if (arg_ == nullptr)
+        {
+            lua_pushnil(ls_);
+            return;
+        }
         void* ptr = lua_newuserdata(ls_, sizeof(userdata_for_object_t<T>));
         new (ptr) userdata_for_object_t<T>(arg_);
 
@@ -679,6 +698,12 @@ struct lua_op_t<T*>
         if (false == lua_type_info_t<T>::is_registed())
         {
             luaL_argerror(ls_, pos_, "type not supported");
+        }
+
+        if (lua_isnil(ls_, pos_))
+        {
+            param_ = nullptr;
+            return 0;
         }
 
         void *arg_data = lua_touserdata(ls_, pos_);
@@ -726,14 +751,19 @@ struct lua_op_t<T*>
         {
             luaL_argerror(ls_, pos_, "type not supported");
         }
+
+        if (lua_isnil(ls_, pos_))
+        {
+            param_ = nullptr;
+            return 0;
+        }
         void *arg_data = lua_touserdata(ls_, pos_);
 
         if (NULL == arg_data || 0 == lua_getmetatable(ls_, pos_))
 		{
-			char buff[128];
-			snprintf(buff, sizeof(buff), "`%s` arg1 connot be null",
-										 lua_type_info_t<T>::get_name());
-			luaL_argerror(ls_, pos_, buff);
+            ostringstream ostr;
+            ostr << "`" << lua_type_info_t<T>::get_name() << "` arg1 connot be null";
+			luaL_argerror(ls_, pos_, ostr.str().c_str());
 		}
 
 		luaL_getmetatable(ls_, lua_type_info_t<T>::get_name());
@@ -743,10 +773,10 @@ struct lua_op_t<T*>
 			if (0 == lua_rawequal(ls_, -1, -2))
 			{
 				lua_pop(ls_, 3);
-				char buff[128];
-				snprintf(buff, sizeof(buff), "`%s` arg1 type not equal",
-											 lua_type_info_t<T>::get_name());
-				luaL_argerror(ls_, pos_, buff);
+                ostringstream ostr;
+                ostr << "`" << lua_type_info_t<T>::get_name() << "` arg1 type not equal";
+											 
+				luaL_argerror(ls_, pos_, ostr.str().c_str());
 			}
 			lua_pop(ls_, 3);
 		}
@@ -758,17 +788,37 @@ struct lua_op_t<T*>
         T* ret_ptr = ((userdata_for_object_t<T>*)arg_data)->obj;
         if (NULL == ret_ptr)
         {
-            char buff[128];
-            snprintf(buff, sizeof(buff), "`%s` object ptr can't be null",
-                                         lua_type_info_t<T>::get_name());
-            luaL_argerror(ls_, pos_, buff);
+            ostringstream ostr;
+            ostr << "`" << lua_type_info_t<T>::get_name() << "` object ptr can't be null";
+            luaL_argerror(ls_, pos_, ostr.str().c_str());
         }
 
         param_ = ret_ptr;
         return 0;
     }
 };
+/*
+template<typename T>
+struct lua_op_t
+{
+    static void push_stack(lua_State* ls_, T arg_)
+    {
+        lua_op_t<int>::push_stack(ls_, arg_);
+        return ;
+    }
 
+    static int get_ret_value(lua_State* ls_, int pos_, T & param_)
+    {
+       return lua_op_t<int>::get_ret_value(ls_, pos_, param_);
+        return 0;
+    }
+
+    static int lua_to_value(lua_State* ls_, int pos_, T& param_)
+    {
+        return lua_op_t<int>::lua_to_value(ls_, pos_, param_);
+    }
+};
+*/
 template<typename T>
 struct lua_op_t<const T*>
 {
@@ -779,12 +829,34 @@ struct lua_op_t<const T*>
 
     static int get_ret_value(lua_State* ls_, int pos_, T* & param_)
     {
-       return lua_op_t<T*>::get_ret_value(ls_, pos_, param_);
+        return lua_op_t<T*>::get_ret_value(ls_, pos_, (T*)param_);
     }
 
     static int lua_to_value(lua_State* ls_, int pos_, T*& param_)
     {
         return lua_op_t<T*>::lua_to_value(ls_, pos_, param_);
+    }
+};
+
+template<typename T>
+struct lua_op_t<const T[]>
+{
+    static void push_stack(lua_State* ls_, const T arg_[])
+    {
+        lua_op_t<T*>::push_stack(ls_, (T*)arg_);
+    }
+
+    static int get_ret_value(lua_State* ls_, int pos_, const T* & param_)
+    {
+        return lua_op_t<T*>::get_ret_value(ls_, pos_, (T*)param_);
+    }
+
+    static int lua_to_value(lua_State* ls_, int pos_, const T*& param_)
+    {
+        T* temp_param_ = (T*)param_;
+        int ret = lua_op_t<T*>::lua_to_value(ls_, pos_, temp_param_);
+        param_ = temp_param_;
+        return ret;
     }
 };
 

@@ -57,11 +57,11 @@ private:
         check(
             "void elog_finish(int ecode, char* fmt, ...){}\n"
             "int foo() {\n"
-            "   elog_finish(1,\"%d\", 1);\n"
+            "   elog_finish(1,_S(\"%d\"), 1);\n"
             "}\n"
             );
         ASSERT_EQUALS("", errout.str());
-
+        
         check(
             "void elog_finish(int ecode, char* fmt, ...){}\n"
             "int foo() {\n"

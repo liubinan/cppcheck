@@ -2,6 +2,8 @@
 // lua checker plugin
 //---------------------------------------------------------------------------
 
+#include <typeinfo>
+
 #include "luaplugin.h"
 #include "symboldatabase.h"
 
@@ -11,7 +13,7 @@ extern "C"
 #include "lualib.h"
 #include "lauxlib.h"
 };
-#include "lua_tinker.h"
+//#include "lua_tinker.h"
 #include "lua/fflua.h"
 using namespace ff;
 //---------------------------------------------------------------------------
@@ -39,108 +41,110 @@ void defToken(lua_State* L) {
     typedef const std::string& (Token::*GetStringFunc)() const;
     typedef void (Token::*printOut1)(const char *title) const;
 
-    fflua_register_t<Token>(L, "Token")
-        .def((GetStringFunc)&Token::str, "str")
-        .def((GetTokenFuncInt)&Token::tokAt, "tokAt")
-    .def((GetTokenFuncInt)&Token::linkAt, "linkAt")
-    .def(&Token::strAt, "strAt")
-    .def((GetTypeFunc)&Token::type, "type")
-    .def((GetBoolFunc)&Token::isKeyword, "isKeyword")
-    .def(&Token::isName, "isName")
-    .def(&Token::isUpperCaseName, "isUpperCaseName")
-    .def(&Token::isLiteral, "isLiteral")
-    .def(&Token::isNumber, "isNumber")
-    .def(&Token::isOp, "isOp")
-    .def(&Token::isConstOp, "isConstOp")
-    .def(&Token::isExtendedOp, "isExtendedOp")
-    .def(&Token::isArithmeticalOp, "isArithmeticalOp")
-    .def(&Token::isComparisonOp, "isComparisonOp")
-    .def(&Token::isAssignmentOp, "isAssignmentOp")
-    .def(&Token::isBoolean, "isBoolean")
+    fflua_register_t<Token, int()> token_reg(L, "Token");
+    token_reg.def((GetStringFunc)&Token::str, "str");
+    token_reg.def((GetTokenFuncInt)&Token::tokAt, "tokAt");
+    token_reg.def((GetTokenFuncInt)&Token::linkAt, "linkAt");
+    token_reg.def(&Token::strAt, "strAt");
+    token_reg.def((GetTypeFunc)&Token::type, "type");
+    token_reg.def((GetBoolFunc)&Token::isKeyword, "isKeyword");
+    token_reg.def(&Token::isName, "isName");
+    token_reg.def(&Token::isUpperCaseName, "isUpperCaseName");
+    token_reg.def(&Token::isLiteral, "isLiteral");
+    token_reg.def(&Token::isNumber, "isNumber");
+    token_reg.def(&Token::isOp, "isOp");
+    token_reg.def(&Token::isConstOp, "isConstOp");
+    token_reg.def(&Token::isExtendedOp, "isExtendedOp");
+    token_reg.def(&Token::isArithmeticalOp, "isArithmeticalOp");
+    token_reg.def(&Token::isComparisonOp, "isComparisonOp");
+    token_reg.def(&Token::isAssignmentOp, "isAssignmentOp");
+    token_reg.def(&Token::isBoolean, "isBoolean");
 
-    .def((GetBoolFunc)&Token::isUnsigned, "isUnsigned")
-    .def((GetBoolFunc)&Token::isSigned, "isSigned")
-    .def((GetBoolFunc)&Token::isPointerCompare, "isPointerCompare")
-    .def((GetBoolFunc)&Token::isLong, "isLong")
-    .def((GetBoolFunc)&Token::isStandardType, "isStandardType")
-    .def((GetBoolFunc)&Token::isExpandedMacro, "isExpandedMacro")
-    .def((GetBoolFunc)&Token::isAttributeConstructor, "isAttributeConstructor")
-    .def((GetBoolFunc)&Token::isAttributeDestructor, "isAttributeDestructor")
-    .def((GetBoolFunc)&Token::isAttributeUnused, "isAttributeUnused")
-    .def((GetBoolFunc)&Token::isAttributeUsed, "isAttributeUsed")
-    .def((GetBoolFunc)&Token::isAttributePure, "isAttributePure")
-    .def((GetBoolFunc)&Token::isAttributeConst, "isAttributeConst")
-    .def((GetBoolFunc)&Token::isAttributeNothrow, "isAttributeNothrow")
-    .def((GetBoolFunc)&Token::isDeclspecNothrow, "isDeclspecNothrow")
+    token_reg.def((GetBoolFunc)&Token::isUnsigned, "isUnsigned");
+    token_reg.def((GetBoolFunc)&Token::isSigned, "isSigned");
+    token_reg.def((GetBoolFunc)&Token::isPointerCompare, "isPointerCompare");
+    token_reg.def((GetBoolFunc)&Token::isLong, "isLong");
+    token_reg.def((GetBoolFunc)&Token::isStandardType, "isStandardType");
+    token_reg.def((GetBoolFunc)&Token::isExpandedMacro, "isExpandedMacro");
+    token_reg.def((GetBoolFunc)&Token::isAttributeConstructor, "isAttributeConstructor");
+    token_reg.def((GetBoolFunc)&Token::isAttributeDestructor, "isAttributeDestructor");
+    token_reg.def((GetBoolFunc)&Token::isAttributeUnused, "isAttributeUnused");
+    token_reg.def((GetBoolFunc)&Token::isAttributeUsed, "isAttributeUsed");
+    token_reg.def((GetBoolFunc)&Token::isAttributePure, "isAttributePure");
+    token_reg.def((GetBoolFunc)&Token::isAttributeConst, "isAttributeConst");
+    token_reg.def((GetBoolFunc)&Token::isAttributeNothrow, "isAttributeNothrow");
+    token_reg.def((GetBoolFunc)&Token::isDeclspecNothrow, "isDeclspecNothrow");
 
 
-    .def((GetUIntFunc)&Token::linenr, "linenr")
-    .def((GetUIntFunc)&Token::fileIndex, "fileIndex")
-    .def((GetTokenFunc)&Token::next, "next")
-    .def((GetTokenFunc)&Token::previous, "previous")
-    .def((GetUIntFunc)&Token::varId, "varId")
-    .def((printOut1)&Token::printOut, "printOut")
-    .def((GetTokenFunc)&Token::link, "link")
-    .def((GetScopeFunc)&Token::scope, "scope")
-    .def((GetFunctionFunc)&Token::function, "function")
-    .def((GetVariableFunc)&Token::variable, "variable")
-    .def(&Token::strValue, "strValue")
-    .def(&Token::progressValue, "progressValue")
-    .def(&Token::nextArgument, "nextArgument")
-    .def((GetConstTokenFunc)&Token::findClosingBracket, "findClosingBracket")
-    .def((GetStringFunc)&Token::originalName, "originalName")
-    .def(&Token::getValue, "getValue")
-    .def(&Token::getMaxValue, "getMaxValue")
-    .def(&Token::getValueLE, "getValueLE")
-    .def(&Token::getValueGE, "getValueGE")
-    .def(&Token::getValueTokenMaxStrLength, "getValueTokenMaxStrLength")
-    .def(&Token::getValueTokenMinStrSize, "getValueTokenMinStrSize")
-    .def(&Token::getValueTokenDeadPointer, "getValueTokenDeadPointer");
+    token_reg.def((GetUIntFunc)&Token::linenr, "linenr");
+    token_reg.def((GetUIntFunc)&Token::fileIndex, "fileIndex");
+    token_reg.def((GetTokenFunc)&Token::next, "next");
+    token_reg.def((GetTokenFunc)&Token::previous, "previous");
+    token_reg.def((GetUIntFunc)&Token::varId, "varId");
+    token_reg.def((printOut1)&Token::printOut, "printOut");
+    token_reg.def((GetTokenFunc)&Token::link, "link");
+    token_reg.def((GetScopeFunc)&Token::scope, "scope");
+    token_reg.def((GetFunctionFunc)&Token::function, "function");
+    token_reg.def((GetVariableFunc)&Token::variable, "variable");
+    token_reg.def(&Token::strValue, "strValue");
+    token_reg.def(&Token::progressValue, "progressValue");
+    token_reg.def(&Token::nextArgument, "nextArgument");
+    token_reg.def((GetConstTokenFunc)&Token::findClosingBracket, "findClosingBracket");
+    token_reg.def((GetStringFunc)&Token::originalName, "originalName");
+    token_reg.def(&Token::getValue, "getValue");
+    token_reg.def(&Token::getMaxValue, "getMaxValue");
+    token_reg.def(&Token::getValueLE, "getValueLE");
+    token_reg.def(&Token::getValueGE, "getValueGE");
+    token_reg.def(&Token::getValueTokenMaxStrLength, "getValueTokenMaxStrLength");
+    token_reg.def(&Token::getValueTokenMinStrSize, "getValueTokenMinStrSize");
+    token_reg.def(&Token::getValueTokenDeadPointer, "getValueTokenDeadPointer");
 
-    lua_tinker::table* tokenType = new lua_tinker::table(L, "TokenType");
-    tokenType->set("eVariable", Token::eVariable);
-    tokenType->set("eType", Token::eType);
-    tokenType->set("eFunction", Token::eFunction);
-    tokenType->set("eKeyword", Token::eKeyword);
-    tokenType->set("eName", Token::eName);
-    tokenType->set("eNumber", Token::eNumber);
-    tokenType->set("eString", Token::eString);
-    tokenType->set("eChar", Token::eChar);
-    tokenType->set("eBoolean", Token::eBoolean);
-    tokenType->set("eLiteral", Token::eLiteral);
-    tokenType->set("eArithmeticalOp", Token::eArithmeticalOp);
-    tokenType->set("eComparisonOp", Token::eComparisonOp);
-    tokenType->set("eAssignmentOp", Token::eAssignmentOp);
-    tokenType->set("eLogicalOp", Token::eLogicalOp);
-    tokenType->set("eBitOp", Token::eBitOp);
-    tokenType->set("eIncDecOp", Token::eIncDecOp);
-    tokenType->set("eExtendedOp", Token::eExtendedOp);
-    tokenType->set("eBracket", Token::eBracket);
-    tokenType->set("eOther", Token::eOther);
-    tokenType->set("eNone", Token::eNone);
-
+    fflua_register_t<> static_reg(L);
     typedef Token *(*findsimplematch2)(Token *tok, const char pattern[]);
     typedef Token *(*findsimplematch3)(Token *tok, const char pattern[], const Token *end);
     typedef Token *(*findmatch3)(Token *tok, const char pattern[], unsigned int varId);
     typedef Token *(*findmatch4)(Token *tok, const char pattern[], const Token *end, unsigned int varId);
-    //lua_tinker::def(L, "findsimplematch", (findsimplematch2)&Token::findsimplematch);
-    lua_tinker::def(L, "findsimplematch", (findsimplematch3)&Token::findsimplematch);
-    //lua_tinker::def(L, "findmatch", (findmatch3)&Token::findmatch);
-    lua_tinker::def(L, "findmatch", (findmatch4)&Token::findmatch);
-    lua_tinker::def(L, "multiCompare", &Token::multiCompare);
+    //static_reg.def((findsimplematch2)&Token::findsimplematch, "findsimplematch");
+    static_reg.def((findsimplematch3)&Token::findsimplematch, "findsimplematch");
+    //static_reg.def((findmatch3)&Token::findmatch, "findmatch");
+    static_reg.def((findmatch4)&Token::findmatch, "findmatch");
+    static_reg.def(&Token::multiCompare, "multiCompare");
 
-    lua_tinker::def(L, "IsSameToken", &IsSameToken);
-    lua_tinker::def(L, "simpleMatch", &Token::simpleMatch);
-    lua_tinker::def(L, "Match", &Token::Match);
-    lua_tinker::def(L, "getStrLength", &Token::getStrLength);
-    lua_tinker::def(L, "getStrSize", &Token::getStrSize);
-    lua_tinker::def(L, "getCharAt", &Token::getCharAt);
+    static_reg.def(&IsSameToken, "IsSameToken");
+    static_reg.def(&Token::simpleMatch, "simpleMatch");
+    static_reg.def(&Token::Match, "Match");
+    static_reg.def(&Token::getStrLength, "getStrLength");
+    static_reg.def(&Token::getStrSize, "getStrSize");
+    static_reg.def(&Token::getCharAt, "getCharAt");
 
+    std::map<std::string, int> tokenType;
+    tokenType["eVariable"] = Token::eVariable;
+    tokenType["eType"] = Token::eType;
+    tokenType["eFunction"] = Token::eFunction;
+    tokenType["eKeyword"] = Token::eKeyword;
+    tokenType["eName"] = Token::eName;
+    tokenType["eNumber"] = Token::eNumber;
+    tokenType["eString"] = Token::eString;
+    tokenType["eChar"] = Token::eChar;
+    tokenType["eBoolean"] = Token::eBoolean;
+    tokenType["eLiteral"] = Token::eLiteral;
+    tokenType["eArithmeticalOp"] = Token::eArithmeticalOp;
+    tokenType["eComparisonOp"] = Token::eComparisonOp;
+    tokenType["eAssignmentOp"] = Token::eAssignmentOp;
+    tokenType["eLogicalOp"] = Token::eLogicalOp;
+    tokenType["eBitOp"] = Token::eBitOp;
+    tokenType["eIncDecOp"] = Token::eIncDecOp;
+    tokenType["eExtendedOp"] = Token::eExtendedOp;
+    tokenType["eBracket"] = Token::eBracket;
+    tokenType["eOther"] = Token::eOther;
+    tokenType["eNone"] = Token::eNone;
+
+    ff::set_global_variable(L, "TokenType", tokenType);
 }
 
 void defTokenizer(lua_State* L)
 {
-    fflua_register_t<Tokenizer>(L, "Tokenizer")
+    fflua_register_t<Tokenizer, int()>(L, "Tokenizer")
     .def(&Tokenizer::isC, "isC")
     .def(&Tokenizer::isCPP, "isCPP")
     .def(&Tokenizer::tokens, "tokens");
@@ -148,15 +152,17 @@ void defTokenizer(lua_State* L)
 
 void defSeverity(lua_State* L)
 {
-    lua_tinker::table* severityType = new lua_tinker::table(L, "SeverityType");
-    severityType->set("none", Severity::none);
-    severityType->set("error", Severity::error);
-    severityType->set("warning", Severity::warning);
-    severityType->set("style", Severity::style);
-    severityType->set("performance", Severity::performance);
-    severityType->set("portability", Severity::portability);
-    severityType->set("information", Severity::information);
-    severityType->set("debug", Severity::debug);
+    std::map<std::string, int> severityType;
+    severityType["none"] = Severity::none;
+    severityType["error"] = Severity::error;
+    severityType["warning"] = Severity::warning;
+    severityType["style"] = Severity::style;
+    severityType["performance"] = Severity::performance;
+    severityType["portability"] = Severity::portability;
+    severityType["information"] = Severity::information;
+    severityType["debug"] = Severity::debug;
+
+    ff::set_global_variable(L, "SeverityType", severityType);
 }
 
 void defScope(lua_State* L)
@@ -164,130 +170,134 @@ void defScope(lua_State* L)
     typedef const Scope *(Scope::*GetScopeFunc)(const std::string&) const;
     typedef const Type *(Scope::*GetTypeFunc)(const std::string&) const;
 
-    fflua_register_t<Scope>(L, "Scope")
-    .def(&Scope::check, "check")
-    .def(&Scope::className, "className")
-    .def(&Scope::classDef, "classDef")
-    .def(&Scope::classStart, "classStart")
-    .def(&Scope::classEnd, "classEnd")
-    .def(&Scope::functionList, "functionList")
-    .def(&Scope::varlist, "varlist")
-    .def(&Scope::nestedIn, "nestedIn")
-    .def(&Scope::nestedList, "nestedList")
-    .def(&Scope::numConstructors, "numConstructors")
-    .def(&Scope::numCopyOrMoveConstructors, "numCopyOrMoveConstructors")
-    .def(&Scope::usingList, "usingList")
-    .def(&Scope::type, "type")
-    .def(&Scope::definedType, "definedType")
-    .def(&Scope::definedTypes, "definedTypes")
-    .def(&Scope::functionOf, "functionOf")
-    .def(&Scope::function, "function")
+    fflua_register_t<Scope, int()> scope_reg(L, "Scope");
+    scope_reg.def(const_cast<SymbolDatabase *Scope::*>(&Scope::check), "check");
+    scope_reg.def(&Scope::className, "className");
+    scope_reg.def(const_cast<Token *Scope::*>(&Scope::classDef), "classDef");
+    scope_reg.def(const_cast<Token *Scope::*>(&Scope::classStart), "classStart");
+    scope_reg.def(const_cast<Token *Scope::*>(&Scope::classEnd), "classEnd");
+//fixme    scope_reg.def(&Scope::functionList, "functionList");
+//fixme scope_reg.def(&Scope::varlist, "varlist");
+    scope_reg.def(const_cast<Scope *Scope::*>(&Scope::nestedIn), "nestedIn");
+    scope_reg.def(&Scope::nestedList, "nestedList");
+    scope_reg.def(&Scope::numConstructors, "numConstructors");
+    scope_reg.def(&Scope::numCopyOrMoveConstructors, "numCopyOrMoveConstructors");
+//fixme    scope_reg.def(&Scope::usingList, "usingList");
+    scope_reg.def(&Scope::type, "type");
+    scope_reg.def(&Scope::definedType, "definedType");
+    scope_reg.def(&Scope::definedTypes, "definedTypes");
+    scope_reg.def(const_cast<Scope *Scope::*>(&Scope::functionOf), "functionOf");
+    scope_reg.def(&Scope::function, "function");
 
-    .def(&Scope::isClassOrStruct, "isClassOrStruct")
-    .def(&Scope::isExecutable, "isExecutable")
-    .def(&Scope::isLocal, "isLocal")
-    .def(&Scope::findFunction, "findFunction")
-    .def(&Scope::findInNestedList, "findInNestedList")
-    .def((GetScopeFunc)&Scope::findRecordInNestedList, "findRecordInNestedList")
-    .def((GetTypeFunc)&Scope::findType, "findType")
-    .def(&Scope::findInNestedListRecursive, "findInNestedListRecursive")
-    .def(&Scope::getVariableList, "getVariableList")
-    .def(&Scope::getDestructor, "getDestructor")
-    .def(&Scope::getNestedNonFunctions, "getNestedNonFunctions")
-    .def(&Scope::hasDefaultConstructor, "hasDefaultConstructor")
-    .def(&Scope::defaultAccess, "defaultAccess")
-    .def(&Scope::checkVariable, "checkVariable")
-    .def(&Scope::getVariable, "getVariable");
+    scope_reg.def(&Scope::isClassOrStruct, "isClassOrStruct");
+    scope_reg.def(&Scope::isExecutable, "isExecutable");
+    scope_reg.def(&Scope::isLocal, "isLocal");
+    scope_reg.def(&Scope::findFunction, "findFunction");
+    scope_reg.def(&Scope::findInNestedList, "findInNestedList");
+    scope_reg.def((GetScopeFunc)&Scope::findRecordInNestedList, "findRecordInNestedList");
+    scope_reg.def((GetTypeFunc)&Scope::findType, "findType");
+    scope_reg.def(&Scope::findInNestedListRecursive, "findInNestedListRecursive");
+    scope_reg.def(&Scope::getVariableList, "getVariableList");
+    scope_reg.def(&Scope::getDestructor, "getDestructor");
+    scope_reg.def(&Scope::getNestedNonFunctions, "getNestedNonFunctions");
+    scope_reg.def(&Scope::hasDefaultConstructor, "hasDefaultConstructor");
+    scope_reg.def(&Scope::defaultAccess, "defaultAccess");
+//fixme    scope_reg.def(&Scope::checkVariable, "checkVariable");
+    scope_reg.def(&Scope::getVariable, "getVariable");;
 
-    lua_tinker::table* sopeType = new lua_tinker::table(L, "ScopeType");
-    sopeType->set("eGlobal", Scope::eGlobal);
-    sopeType->set("eClass", Scope::eClass);
-    sopeType->set("eStruct", Scope::eStruct);
-    sopeType->set("eUnion", Scope::eUnion);
-    sopeType->set("eNamespace", Scope::eNamespace);
-    sopeType->set("eFunction", Scope::eFunction);
-    sopeType->set("eIf", Scope::eIf);
-    sopeType->set("eElse", Scope::eElse);
-    sopeType->set("eFor", Scope::eFor);
-    sopeType->set("eWhile", Scope::eWhile);
-    sopeType->set("eDo", Scope::eDo);
-    sopeType->set("eSwitch", Scope::eSwitch);
-    sopeType->set("eUnconditional", Scope::eUnconditional);
-    sopeType->set("eTry", Scope::eTry);
-    sopeType->set("eCatch", Scope::eCatch);
-    sopeType->set("eLambda", Scope::eLambda);
+    std::map<std::string, int> scopeType;
+    scopeType["eGlobal"] = Scope::eGlobal;
+    scopeType["eClass"] = Scope::eClass;
+    scopeType["eStruct"] = Scope::eStruct;
+    scopeType["eUnion"] = Scope::eUnion;
+    scopeType["eNamespace"] = Scope::eNamespace;
+    scopeType["eFunction"] = Scope::eFunction;
+    scopeType["eIf"] = Scope::eIf;
+    scopeType["eElse"] = Scope::eElse;
+    scopeType["eFor"] = Scope::eFor;
+    scopeType["eWhile"] = Scope::eWhile;
+    scopeType["eDo"] = Scope::eDo;
+    scopeType["eSwitch"] = Scope::eSwitch;
+    scopeType["eUnconditional"] = Scope::eUnconditional;
+    scopeType["eTry"] = Scope::eTry;
+    scopeType["eCatch"] = Scope::eCatch;
+    scopeType["eLambda"] = Scope::eLambda;
+
+    ff::set_global_variable(L, "ScopeType", scopeType);
 }
 
 void defType(lua_State* L)
 {
-    fflua_register_t<Type>(L, "Type")
-    .def(&Type::classDef, "classDef")
-    .def(&Type::classScope, "classScope")
-    .def(&Type::enclosingScope, "enclosingScope")
-    .def(&Type::derivedFrom, "derivedFrom")
-    .def(&Type::friendList, "friendList")
+    fflua_register_t<Type, int()> type_reg(L, "Type");
+    type_reg.def(const_cast<Token *Type::*>(&Type::classDef), "classDef");
+    type_reg.def(const_cast<Scope *Type::*>(&Type::classScope), "classScope");
+    type_reg.def(const_cast<Scope *Type::*>(&Type::enclosingScope), "enclosingScope");
+//fixme    type_reg.def(&Type::derivedFrom, "derivedFrom");
+//fixme    type_reg.def(&Type::friendList, "friendList");
 
-    .def(&Type::name, "name")
-    .def(&Type::initBaseInfo, "initBaseInfo")
-    .def(&Type::getFunction, "getFunction")
-    .def(&Type::hasCircularDependencies, "hasCircularDependencies");
+    type_reg.def(&Type::name, "name");
+    type_reg.def(&Type::initBaseInfo, "initBaseInfo");
+    type_reg.def(&Type::getFunction, "getFunction");
+    type_reg.def(&Type::hasCircularDependencies, "hasCircularDependencies");
 }
 
 void defFunction(lua_State* L)
 {
-    fflua_register_t<Function>(L, "Function")
+    fflua_register_t<Function, int()> function_reg(L, "Function");
 
-    .def(&Function::tokenDef, "tokenDef")
-    .def(&Function::argDef, "argDef")
-    .def(&Function::token, "token")
-    .def(&Function::arg, "arg")
-    .def(&Function::retDef, "retDef")
-    .def(&Function::retType, "retType")
-    .def(&Function::functionScope, "functionScope")
-    .def(&Function::nestedIn, "nestedIn")
-    .def(&Function::argumentList, "argumentList")
-    .def(&Function::initArgCount, "initArgCount")
-    .def(&Function::type, "type")
-    .def(&Function::access, "access")
-    .def(&Function::hasBody, "hasBody")
-    .def(&Function::isInline, "isInline")
-    .def(&Function::isConst, "isConst")
-    .def(&Function::isVirtual, "isVirtual")
-    .def(&Function::isPure, "isPure")
-    .def(&Function::isStatic, "isStatic")
-    .def(&Function::isFriend, "isFriend")
-    .def(&Function::isExplicit, "isExplicit")
-    .def(&Function::isDefault, "isDefault")
-    .def(&Function::isDelete, "isDelete")
-    .def(&Function::isNoExcept, "isNoExcept")
-    .def(&Function::isThrow, "isThrow")
-    .def(&Function::isOperator, "isOperator")
-    .def(&Function::noexceptArg, "noexceptArg")
-    .def(&Function::throwArg, "throwArg")
+    function_reg.def(const_cast<Token *Function::*>(&Function::tokenDef), "tokenDef");
+    function_reg.def(const_cast<Token *Function::*>(&Function::argDef), "argDef");
+    function_reg.def(const_cast<Token *Function::*>(&Function::token), "token");
+    function_reg.def(const_cast<Token *Function::*>(&Function::arg), "arg");
+    function_reg.def(const_cast<Token *Function::*>(&Function::retDef), "retDef");
+    function_reg.def(const_cast<Type *Function::*>(&Function::retType), "retType");
+    function_reg.def(const_cast<Scope *Function::*>(&Function::functionScope), "functionScope");
+    function_reg.def(const_cast<Scope *Function::*>(&Function::nestedIn), "nestedIn");
+//fixme    function_reg.def(&Function::argumentList, "argumentList");
+    function_reg.def(&Function::initArgCount, "initArgCount");
+    function_reg.def(&Function::type, "type");
+    function_reg.def(&Function::access, "access");
+    function_reg.def(&Function::hasBody, "hasBody");
+    function_reg.def(&Function::isInline, "isInline");
+    function_reg.def(&Function::isConst, "isConst");
+    function_reg.def(&Function::isVirtual, "isVirtual");
+    function_reg.def(&Function::isPure, "isPure");
+    function_reg.def(&Function::isStatic, "isStatic");
+    function_reg.def(&Function::isFriend, "isFriend");
+    function_reg.def(&Function::isExplicit, "isExplicit");
+    function_reg.def(&Function::isDefault, "isDefault");
+    function_reg.def(&Function::isDelete, "isDelete");
+    function_reg.def(&Function::isNoExcept, "isNoExcept");
+    function_reg.def(&Function::isThrow, "isThrow");
+    function_reg.def(&Function::isOperator, "isOperator");
+    function_reg.def(const_cast<Token *Function::*>(&Function::noexceptArg), "noexceptArg");
+    function_reg.def(const_cast<Token *Function::*>(&Function::throwArg), "throwArg");
 
-    .def(&Function::name, "name")
-    .def(&Function::argCount, "argCount")
-    .def(&Function::minArgCount, "minArgCount")
-    .def(&Function::getArgumentVar, "getArgumentVar")
-    .def(&Function::initializedArgCount, "initializedArgCount")
-    .def(&Function::addArguments, "addArguments")
-    .def(&Function::isImplicitlyVirtual, "isImplicitlyVirtual")
-    .def(&Function::isConstructor, "isConstructor")
-    .def(&Function::isDestructor, "isDestructor")
-    .def(&Function::isAttributeConstructor, "isAttributeConstructor")
-    .def(&Function::isAttributeDestructor, "isAttributeDestructor")
-    .def(&Function::isAttributePure, "isAttributePure")
-    .def(&Function::isAttributeConst, "isAttributeConst")
-    .def(&Function::isAttributeNothrow, "isAttributeNothrow")
-    .def(&Function::isDeclspecNothrow, "isDeclspecNothrow");
+    function_reg.def(&Function::name, "name");
+    function_reg.def(&Function::argCount, "argCount");
+    function_reg.def(&Function::minArgCount, "minArgCount");
+    function_reg.def(&Function::getArgumentVar, "getArgumentVar");
+    function_reg.def(&Function::initializedArgCount, "initializedArgCount");
+    function_reg.def(&Function::addArguments, "addArguments");
+    function_reg.def(&Function::isImplicitlyVirtual, "isImplicitlyVirtual");
+    function_reg.def(&Function::isConstructor, "isConstructor");
+    function_reg.def(&Function::isDestructor, "isDestructor");
+    function_reg.def(&Function::isAttributeConstructor, "isAttributeConstructor");
+    function_reg.def(&Function::isAttributeDestructor, "isAttributeDestructor");
+    function_reg.def(&Function::isAttributePure, "isAttributePure");
+    function_reg.def(&Function::isAttributeConst, "isAttributeConst");
+    function_reg.def(&Function::isAttributeNothrow, "isAttributeNothrow");
+    function_reg.def(&Function::isDeclspecNothrow, "isDeclspecNothrow");
 
-    lua_tinker::table* functionType = new lua_tinker::table(L, "FunctionType");
-    functionType->set("eConstructor", Function::eConstructor);
-    functionType->set("eCopyConstructor", Function::eCopyConstructor);
-    functionType->set("eMoveConstructor", Function::eMoveConstructor);
-    functionType->set("eOperatorEqual", Function::eOperatorEqual);
-    functionType->set("eDestructor", Function::eDestructor);
-    functionType->set("eFunction", Function::eFunction);
+    std::map<std::string, int> functionType;
+    functionType["eConstructor"] = Function::eConstructor;
+    functionType["eCopyConstructor"] = Function::eCopyConstructor;
+    functionType["eMoveConstructor"] = Function::eMoveConstructor;
+    functionType["eOperatorEqual"] = Function::eOperatorEqual;
+    functionType["eDestructor"] = Function::eDestructor;
+    functionType["eFunction"] = Function::eFunction;
+
+    ff::set_global_variable(L, "FunctionType", functionType);
 }
 
 void defVariable(lua_State* L)
@@ -295,42 +305,42 @@ void defVariable(lua_State* L)
     typedef const Type *(Variable::*GetTypeFunc)() const;
     typedef bool(Variable::*GetBoolFunc)() const;
 
-    fflua_register_t<Variable>(L, "Variable")
-    .def(&Variable::nameToken, "nameToken")
-    .def(&Variable::typeStartToken, "typeStartToken")
-    .def(&Variable::typeEndToken, "typeEndToken")
-    .def(&Variable::name, "name")
-    .def(&Variable::declarationId, "declarationId")
-    .def(&Variable::index, "index")
-    .def(&Variable::isPublic, "isPublic")
-    .def(&Variable::isProtected, "isProtected")
-    .def(&Variable::isPrivate, "isPrivate")
-    .def(&Variable::isGlobal, "isGlobal")
-    .def(&Variable::isNamespace, "isNamespace")
-    .def(&Variable::isArgument, "isArgument")
-    .def(&Variable::isLocal, "isLocal")
-    .def(&Variable::isMutable, "isMutable")
-    .def(&Variable::isStatic, "isStatic")
-    .def(&Variable::isExtern, "isExtern")
-    .def(&Variable::isConst, "isConst")
-    .def(&Variable::isThrow, "isThrow")
-    .def(&Variable::isClass, "isClass")
-    .def(&Variable::isArray, "isArray")
-    .def(&Variable::isPointer, "isPointer")
-    .def(&Variable::isArrayOrPointer, "isArrayOrPointer")
-    .def(&Variable::isReference, "isReference")
-    .def(&Variable::isRValueReference, "isRValueReference")
-    .def(&Variable::hasDefault, "hasDefault")
-    .def((GetTypeFunc)&Variable::type, "type")
-    .def(&Variable::typeScope, "typeScope")
-    .def(&Variable::scope, "scope")
-    .def(&Variable::dimensions, "dimensions")
-    .def(&Variable::dimension, "dimension")
-    .def(&Variable::dimensionKnown, "dimensionKnown")
-    .def((GetBoolFunc)&Variable::isStlType, "isStlType")
-    .def(&Variable::isStlStringType, "isStlStringType")
-    .def(&Variable::isFloatingType, "isFloatingType")
-    .def(&Variable::isIntegralType, "isIntegralType");
+    fflua_register_t<Variable, int()> variable_reg(L, "Variable");
+    variable_reg.def(&Variable::nameToken, "nameToken");
+    variable_reg.def(&Variable::typeStartToken, "typeStartToken");
+    variable_reg.def(&Variable::typeEndToken, "typeEndToken");
+    variable_reg.def(&Variable::name, "name");
+    variable_reg.def(&Variable::declarationId, "declarationId");
+    variable_reg.def(&Variable::index, "index");
+    variable_reg.def(&Variable::isPublic, "isPublic");
+    variable_reg.def(&Variable::isProtected, "isProtected");
+    variable_reg.def(&Variable::isPrivate, "isPrivate");
+    variable_reg.def(&Variable::isGlobal, "isGlobal");
+    variable_reg.def(&Variable::isNamespace, "isNamespace");
+    variable_reg.def(&Variable::isArgument, "isArgument");
+    variable_reg.def(&Variable::isLocal, "isLocal");
+    variable_reg.def(&Variable::isMutable, "isMutable");
+    variable_reg.def(&Variable::isStatic, "isStatic");
+    variable_reg.def(&Variable::isExtern, "isExtern");
+    variable_reg.def(&Variable::isConst, "isConst");
+    variable_reg.def(&Variable::isThrow, "isThrow");
+    variable_reg.def(&Variable::isClass, "isClass");
+    variable_reg.def(&Variable::isArray, "isArray");
+    variable_reg.def(&Variable::isPointer, "isPointer");
+    variable_reg.def(&Variable::isArrayOrPointer, "isArrayOrPointer");
+    variable_reg.def(&Variable::isReference, "isReference");
+    variable_reg.def(&Variable::isRValueReference, "isRValueReference");
+    variable_reg.def(&Variable::hasDefault, "hasDefault");
+    variable_reg.def((GetTypeFunc)&Variable::type, "type");
+    variable_reg.def(&Variable::typeScope, "typeScope");
+    variable_reg.def(&Variable::scope, "scope");
+//fixme    variable_reg.def(&Variable::dimensions, "dimensions");
+    variable_reg.def(&Variable::dimension, "dimension");
+    variable_reg.def(&Variable::dimensionKnown, "dimensionKnown");
+    variable_reg.def((GetBoolFunc)&Variable::isStlType, "isStlType");
+    variable_reg.def(&Variable::isStlStringType, "isStlStringType");
+    variable_reg.def(&Variable::isFloatingType, "isFloatingType");
+    variable_reg.def(&Variable::isIntegralType, "isIntegralType");
 }
 
 void defSymbolDatabase(lua_State* L)
@@ -338,63 +348,64 @@ void defSymbolDatabase(lua_State* L)
     typedef const Type *(SymbolDatabase::*GetTypeFunc)(const Token *, const Scope *) const;
     typedef const Scope *(SymbolDatabase::*GetScopeFunc)(const Token *, const Scope *) const;
 
-    fflua_register_t<SymbolDatabase>(L, "SymbolDatabase")
-    .def(&SymbolDatabase::scopeList, "scopeList")
-    .def(&SymbolDatabase::functionScopes, "functionScopes")
-    .def(&SymbolDatabase::classAndStructScopes, "classAndStructScopes")
-    .def(&SymbolDatabase::typeList, "typeList")
+    fflua_register_t<SymbolDatabase, int()> database_reg(L, "SymbolDatabase");
+//fixme    database_reg.def(&SymbolDatabase::scopeList, "scopeList");
+    database_reg.def(&SymbolDatabase::functionScopes, "functionScopes");
+    database_reg.def(&SymbolDatabase::classAndStructScopes, "classAndStructScopes");
+//fixme    database_reg.def(&SymbolDatabase::typeList, "typeList");
 
-    .def(&SymbolDatabase::findVariableType, "findVariableType")
-    .def(&SymbolDatabase::findFunction, "findFunction")
-    .def(&SymbolDatabase::findScopeByName, "findScopeByName")
-    .def((GetTypeFunc)&SymbolDatabase::findType, "findType")
-    .def((GetScopeFunc)&SymbolDatabase::findScope, "findScope")
-    .def(&SymbolDatabase::isClassOrStruct, "isClassOrStruct")
-    .def(&SymbolDatabase::getVariableFromVarId, "getVariableFromVarId")
-    .def(&SymbolDatabase::getVariableListSize, "getVariableListSize")
-    .def(&SymbolDatabase::debugMessage, "debugMessage")
-    .def(&SymbolDatabase::printOut, "printOut")
-    .def(&SymbolDatabase::printVariable, "printVariable")
-    .def(&SymbolDatabase::printXml, "printXml");
+    database_reg.def(&SymbolDatabase::findVariableType, "findVariableType");
+    database_reg.def(&SymbolDatabase::findFunction, "findFunction");
+    database_reg.def(&SymbolDatabase::findScopeByName, "findScopeByName");
+    database_reg.def((GetTypeFunc)&SymbolDatabase::findType, "findType");
+    database_reg.def((GetScopeFunc)&SymbolDatabase::findScope, "findScope");
+    database_reg.def(&SymbolDatabase::isClassOrStruct, "isClassOrStruct");
+    database_reg.def(&SymbolDatabase::getVariableFromVarId, "getVariableFromVarId");
+    database_reg.def(&SymbolDatabase::getVariableListSize, "getVariableListSize");
+    database_reg.def(&SymbolDatabase::debugMessage, "debugMessage");
+    database_reg.def(&SymbolDatabase::printOut, "printOut");
+    database_reg.def(&SymbolDatabase::printVariable, "printVariable");
+//fixme database_reg.def(&SymbolDatabase::printXml, "printXml");
+}
+
+void defLuaPlugin(lua_State* L)
+{
+    fflua_register_t<LuaPlugin, int()> luaplugin_reg(L, "LuaPlugin");
+
+    luaplugin_reg.def(&LuaPlugin::luaReportError, "reportError");
 }
 
 void LuaPlugin::quoteElogStringArg()
 {
-    lua_State* L = lua_open();
-    luaopen_base(L);
-    luaopen_string(L);
+    //lua_tinker::class_add<AccessControl>(L, "AccessControl");
+    //lua_tinker::class_add<ValueFlow::Value>(L, "ValueFlow.Value");
 
-    defToken(L);
-    defTokenizer(L);
-    defSeverity(L);
-    defScope(L);
-    defType(L);
-    defFunction(L);
-    defVariable(L);
-    defSymbolDatabase(L);
+    fflua_t fflua;
+    fflua.reg(defToken);
+    fflua.reg(defTokenizer);
+    fflua.reg(defSeverity);
+    fflua.reg(defScope);
+    fflua.reg(defType);
+    fflua.reg(defFunction);
+    fflua.reg(defVariable);
+    fflua.reg(defSymbolDatabase);
+    fflua.reg(defLuaPlugin);
 
-    lua_tinker::class_add<AccessControl>(L, "AccessControl");
-    lua_tinker::class_add<ValueFlow::Value>(L, "ValueFlow.Value");
+    fflua.set_global_variable("_tokenizer", this->_tokenizer);
+    fflua.set_global_variable("_checkPlugin", this);
 
-    lua_tinker::class_add<LuaPlugin>(L, "LuaPlugin");
-    lua_tinker::class_def<LuaPlugin>(L, "reportError", &LuaPlugin::luaReportError);
+    fflua.run_string("print(\"hello\")");
 
-    lua_tinker::set(L, "_tokenizer", this->_tokenizer);
-    lua_tinker::set(L, "_checkPlugin", this);
+    fflua.run_string("print(\"isC: \" .. tostring(_tokenizer:isC()))");
+    fflua.run_string("print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
 
-    lua_tinker::dostring(L, "print(\"hello\")");
+    fflua.run_string("print(\"str: \" .. _tokenizer:tokens():str())");
+    fflua.run_string("print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\", 0)))");
+    fflua.run_string("print(_tokenizer:tokens():type())");
+    fflua.run_string("print(\"Token::eFunction: \" .. TokenType.eFunction)");
 
-    lua_tinker::dostring(L, "print(\"isC: \" .. tostring(_tokenizer:isC()))");
-    lua_tinker::dostring(L, "print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
+    fflua.load_file("E:\\lbn\\cppcheck\\bin\\ChekElog.lua");
 
-    lua_tinker::dostring(L, "print(\"str: \" .. _tokenizer:tokens():str())");
-    lua_tinker::dostring(L, "print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\")))");
-    lua_tinker::dostring(L, "print(_tokenizer:tokens():type())");
-    lua_tinker::dostring(L, "print(\"Token::eFunction: \" .. TokenType.eFunction)");
-
-    lua_tinker::dofile(L, "E:\\lbn\\cppcheck\\bin\\ChekElog.lua");
-
-    lua_close(L);
     return;
     const Token *tok = findElogPattern(_tokenizer->tokens());
     const Token *endTok = tok ? tok->next()->link() : nullptr;

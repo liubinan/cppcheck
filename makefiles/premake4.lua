@@ -73,7 +73,7 @@ solution "cppcheck"
 			"../cli",
 			"../lib",
 		}
-        links {"cppcheck"}
+        links {"cppcheck", "lua"}
         targetdir("bin")
 		
 		configuration {"gmake or codeblocks or codelite"}
@@ -83,7 +83,7 @@ solution "cppcheck"
 			links {"shlwapi"}
 
     project "cppcheck"
-        kind "SharedLib"
+        kind "StaticLib"
         language "C++"
         files {
             "../lib/*.h", 
@@ -92,18 +92,24 @@ solution "cppcheck"
 			"../externals/tinyxml/*.cpp",
 			"../externals/fflua/**.h",
         }
-		--excludes {"../lib/lua*.cpp"}
+		excludes {"../lib/lua_ti*"}
         includedirs {
             "../lib",
 			"../lua",
 			"../externals/tinyxml",
 			"../externals/fflua",
         }
-		links {"lua"}
+		--links {"lua"}
         targetdir("bin")
 		
 		configuration {"gmake or codeblocks or codelite"}
 			buildoptions {"-std=gnu++11"}
+			
+		configuration "vs*"
+			defines {
+				"LUA_WIN",
+			}
+            links {"libeay32", "ws2_32"}
 
 	project "lua"
         kind "StaticLib"
@@ -118,13 +124,34 @@ solution "cppcheck"
         targetdir("bin")
 		
 		configuration "vs*"
-			includedirs { "../third_party/gflags/src/windows" }
 			defines {
 				"LUA_WIN",
 			}
-            pchheader "common.h"
-            pchsource "../src/common.cpp"
-            links {"libeay32", "ws2_32"}
+
+	-- ≤‚ ‘π§≥Ã
+	project "testrunner"
+        kind "ConsoleApp"
+        language "C++"
+        files { 
+			"../test/*.h", 
+			"../test/*.cpp",
+			"../cli/*.h",
+			"../cli/*.cpp",
+		}
+		excludes {"../cli/main.cpp"}
+        includedirs { 
+			"../lib",
+			"../cli",
+			"../externals/tinyxml",
+		}
+        links {"cppcheck", "lua"}
+        targetdir("bin")
+		
+		configuration {"gmake or codeblocks or codelite"}
+			buildoptions {"-std=gnu++11"}
+		
+		configuration {"gmake or codeblocks or codelite", "windows"}
+			links {"shlwapi"}
 
 
             

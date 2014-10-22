@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <lua.hpp>
-
+#include <iostream>
 #include <string>
 using namespace std;
 
@@ -90,7 +90,7 @@ public:
 		{
 			string err = fflua_tool_t::dump_error(m_ls, "cannot load file<%s>", file_name_.c_str());
 			::lua_pop(m_ls, 1);
-			throw lua_exception_t(err);
+            std::cerr << err << std::endl;;
 		}
 
 		return 0;
@@ -104,7 +104,7 @@ public:
 		{
 			string err = fflua_tool_t::dump_error(m_ls, "fflua_t::run_string ::lua_pcall faled str<%s>", str_);
 			::lua_pop(m_ls, 1);
-			throw lua_exception_t(err);
+            std::cerr << err << std::endl;
 		}
 	}
     void run_string(const string& str_) throw (lua_exception_t)
@@ -221,17 +221,29 @@ int  fflua_t::get_global_variable(const char* field_name_, T& ret_)
 }
 
 template<typename T>
+int  set_global_variable(lua_State* L, const char* field_name_, const T& value_)
+{
+    lua_op_t<T>::push_stack(L, value_);
+    lua_setglobal(L, field_name_);
+    return 0;
+}
+
+template<typename T>
+int  set_global_variable(lua_State* L, const string& field_name_, const T& value_)
+{
+    return ff::set_global_variable<T>(L, field_name_.c_str(), value_);
+}
+
+template<typename T>
 int  fflua_t::set_global_variable(const string& field_name_, const T& value_)
 {
-    return set_global_variable<T>(field_name_.c_str(), value_);
+    return set_global_variable<T>(m_ls, field_name_.c_str(), value_);
 }
 
 template<typename T>
 int  fflua_t::set_global_variable(const char* field_name_, const T& value_)
 {
-    lua_op_t<T>::push_stack(m_ls, value_);
-    lua_setglobal(m_ls, field_name_);
-    return 0;
+    return ff::set_global_variable<T>(m_ls, field_name_, value_);
 }
 
 template<typename T>

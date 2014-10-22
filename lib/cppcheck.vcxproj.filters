@@ -301,6 +301,15 @@
     <ClInclude Include="lua_tinker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\externals\fflua\lua\fflua.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\fflua\lua\fflua_register.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\fflua\lua\fflua_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="version.rc" />
