@@ -82,6 +82,20 @@ solution "cppcheck"
 		configuration {"gmake or codeblocks or codelite", "windows"}
 			links {"shlwapi"}
 
+		configuration "windows"
+		    postbuildcommands { 
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\cfg ..\\..\\bin\\cfg"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\checkers ..\\..\\bin\\checkers"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\rules ..\\..\\bin\\rules"]],
+			}
+			
+		configuration "not windows"
+		    postbuildcommands { 
+				[[cp -rf ../../../cfg ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+			}
+
     project "cppcheck"
         kind "StaticLib"
         language "C++"
@@ -153,5 +167,18 @@ solution "cppcheck"
 		configuration {"gmake or codeblocks or codelite", "windows"}
 			links {"shlwapi"}
 
+		configuration "windows"
+			postbuildcommands { 
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\cfg ..\\..\\bin\\cfg"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\checkers ..\\..\\bin\\checkers"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\rules ..\\..\\bin\\rules"]],
+			}
+		 
+		configuration "not windows"
+		    postbuildcommands { 
+				[[cp -rf ../../../cfg ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+			}
 
             
