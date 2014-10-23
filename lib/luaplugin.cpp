@@ -6,6 +6,8 @@
 
 #include "luaplugin.h"
 #include "symboldatabase.h"
+#include "path.h"
+#include "filelister.h"
 
 extern "C"
 {
@@ -21,34 +23,48 @@ using namespace ff;
 
 // Register this check class (by creating a static instance of it)
 namespace {
-    LuaPlugin instance;
+    struct init_lua_plugin_t {
+        init_lua_plugin_t() {
+            fflua_t fflua;
+
+            std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
+            std::string lua_plugin_dir = exe_dir + "/checkers";
+            std::map<std::string, std::size_t> files;
+            std::set<std::string> lua_extra;
+            lua_extra.insert(".lua");
+
+            FileLister::recursiveAddFiles(files, lua_plugin_dir, lua_extra);
+
+            for (auto f : files)
+            {
+                std::string lua_file = f.first;
+                if (Path::getFilenameExtensionInLowerCase(lua_file) != ".lua") {
+                    continue;
+                }
+                fflua.load_file(lua_file);
+
+                if (fflua.is_function_exists("myName"))
+                {
+                    std::string check_name = fflua.call<string>("myName");
+                    std::cout << "myName: " << check_name << std::endl;
+
+                    bool simple_check_exists = fflua.is_function_exists("runSimplifiedChecks");
+                    std::cout << "runSimplifiedChecks: " << simple_check_exists << std::endl;
+
+                    bool check_exists = fflua.is_function_exists("runChecks");
+                    std::cout << "runChecks: " << check_exists << std::endl;
+
+                    new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
+                }
+            }
+
+        }
+    }init_lua_plugin;
+
 }
 
 LuaPlugin::LuaPlugin() : Check(myName()) {
-    fflua_t fflua;
-
-    std::set<std::string> lua_files;
-    lua_files.insert("E:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
-
-    for (std::string lua_file : lua_files)
-    {
-        fflua.load_file(lua_file);
-
-        if (fflua.is_function_exists("myName"))
-        {
-            std::string check_name = fflua.call<string>("myName");
-            std::cout << "myName: " << check_name << std::endl;
-
-            bool simple_check_exists = fflua.is_function_exists("runSimplifiedChecks");
-            std::cout << "runSimplifiedChecks: " << simple_check_exists << std::endl;
-
-            bool check_exists = fflua.is_function_exists("runChecks");
-            std::cout << "runChecks: " << check_exists << std::endl;
-
-            new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
-        }
     }
-}
 
 bool IsSameToken(Token* tok1, Token* tok2) {
     return tok1 == tok2;
@@ -422,10 +438,10 @@ void LuaPlugin::runSimplifiedChecks()
     fflua.set_global_variable("_settings", this->_settings);
 
 //     fflua.run_string("print(\"hello\")");
-// 
+//
 //     fflua.run_string("print(\"isC: \" .. tostring(_tokenizer:isC()))");
 //     fflua.run_string("print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
-// 
+//
 //     fflua.run_string("print(\"str: \" .. _tokenizer:tokens():str())");
 //     fflua.run_string("print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\", 0)))");
 //     fflua.run_string("print(_tokenizer:tokens():type())");
@@ -435,7 +451,7 @@ void LuaPlugin::runSimplifiedChecks()
 //     std::cout << "Match:" << fflua.is_function_exists("Match") << std::endl;
 //     std::cout << "runSimplifiedChecks222:" << fflua.is_function_exists("runSimplifiedChecks222") << std::endl;
 
-    fflua.load_file("E:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
+    fflua.load_file("d:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
 
     fflua.call("runSimplifiedChecks");
 }

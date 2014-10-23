@@ -19,6 +19,9 @@
 #if defined(__GNUC__) && (defined(_WIN32) || defined(__CYGWIN__))
 #undef __STRICT_ANSI__
 #endif
+#ifdef _WIN32
+#include "windows.h"
+#endif // _WIN32
 #include "path.h"
 #include <algorithm>
 #include <vector>
@@ -35,6 +38,19 @@ static bool caseInsensitiveFilesystem()
     // TODO: Non-windows filesystems might be case insensitive
     return false;
 #endif
+}
+
+std::string Path::getModuleFileName()
+{
+#ifdef _WIN32
+    TCHAR szPath[MAX_PATH + 1]={0};
+    GetModuleFileName(NULL, szPath, MAX_PATH);
+    return szPath;
+#else
+    char exec_name [2048];
+    readlink ("/proc/self/exe", exec_name, 2048);
+    return exec_name;
+#endif // _WIN32
 }
 
 std::string Path::toNativeSeparators(std::string path)

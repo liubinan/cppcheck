@@ -132,7 +132,7 @@ public:
         lua_setglobal(m_ls, func_name_);
     }
 
-    bool fflua_t::is_function_exists(const char* field_name_)
+    bool is_function_exists(const char* field_name_)
     {
         bool ret = false;
 

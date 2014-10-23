@@ -138,6 +138,8 @@ public:
      */
     static bool isCPP(const std::string &extensionInLowerCase);
 
+    static std::string getModuleFileName();
+
 private:
     /**
      * @brief Is filename a header based on file extension
