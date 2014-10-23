@@ -132,6 +132,17 @@ public:
         lua_setglobal(m_ls, func_name_);
     }
 
+    bool fflua_t::is_function_exists(const char* field_name_)
+    {
+        bool ret = false;
+
+        lua_getglobal(m_ls, field_name_);
+        ret = lua_isfunction(m_ls, -1);
+
+        lua_pop(m_ls, 1);
+        return ret;
+    }
+
     template<typename T>
     void  reg(T a);
 
@@ -270,9 +281,9 @@ RET_V fflua_t::call(const char* func_name_) throw (lua_exception_t)
     if (lua_op_t<RET_V>::get_ret_value(m_ls, -1, ret))
     {
         lua_pop(m_ls, 1);
-        char buff[512];
-        snprintf(buff, sizeof(buff), "callfunc [arg0] get_ret_value failed  func_name<%s>", func_name_);
-        throw lua_exception_t(buff);
+        ostringstream ostr;
+        ostr << "callfunc [arg0] get_ret_value failed  func_name<" << func_name_ << ">";
+        throw lua_exception_t(ostr.str());
     }
 
     lua_pop(m_ls, 1);

@@ -13,27 +13,33 @@ do
 			false);
 	end
 	
-	tok = findElogPattern(_tokenizer:tokens());
-	endTok = tok and (tok:next():link());
-
-	while (tok and endTok) do
-		tmp = tok:next():next();
-		while not IsSameToken(tmp, endTok) do
-
-			if tmp:str() == "(" then
-				tmp = tmp:link();
-			else
-				if tmp:type() == TokenType.eString then
-					quoteElogStringArgWith_SError(tmp, tok:str())
-					print(tmp:str())
-				end
-				
-				tmp = tmp:next()
-			end
-		end
-		
-		tok = findElogPattern(endTok:next());
-		endTok = tok and (tok:next():link());
+	function myName()
+		return "check_elog"
 	end
+	
+	function runSimplifiedChecks()
+		tok = findElogPattern(_tokenizer:tokens());
+		endTok = tok and (tok:next():link());
+
+		while (tok and endTok) do
+			tmp = tok:next():next();
+			while not IsSameToken(tmp, endTok) do
+
+				if tmp:str() == "(" then
+					tmp = tmp:link();
+				else
+					if tmp:type() == TokenType.eString then
+						quoteElogStringArgWith_SError(tmp, tok:str())
+					end
+					
+					tmp = tmp:next()
+				end
+			end
+			
+			tok = findElogPattern(endTok:next());
+			endTok = tok and (tok:next():link());
+		end
+	end
+	
 end
 

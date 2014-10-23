@@ -24,6 +24,32 @@ namespace {
     LuaPlugin instance;
 }
 
+LuaPlugin::LuaPlugin() : Check(myName()) {
+    fflua_t fflua;
+
+    std::set<std::string> lua_files;
+    lua_files.insert("E:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
+
+    for (std::string lua_file : lua_files)
+    {
+        fflua.load_file(lua_file);
+
+        if (fflua.is_function_exists("myName"))
+        {
+            std::string check_name = fflua.call<string>("myName");
+            std::cout << "myName: " << check_name << std::endl;
+
+            bool simple_check_exists = fflua.is_function_exists("runSimplifiedChecks");
+            std::cout << "runSimplifiedChecks: " << simple_check_exists << std::endl;
+
+            bool check_exists = fflua.is_function_exists("runChecks");
+            std::cout << "runChecks: " << check_exists << std::endl;
+
+            new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
+        }
+    }
+}
+
 bool IsSameToken(Token* tok1, Token* tok2) {
     return tok1 == tok2;
 }
@@ -375,7 +401,7 @@ void defLuaPlugin(lua_State* L)
     luaplugin_reg.def(&LuaPlugin::luaReportError, "reportError");
 }
 
-void LuaPlugin::quoteElogStringArg()
+void LuaPlugin::runSimplifiedChecks()
 {
     //lua_tinker::class_add<AccessControl>(L, "AccessControl");
     //lua_tinker::class_add<ValueFlow::Value>(L, "ValueFlow.Value");
@@ -391,60 +417,29 @@ void LuaPlugin::quoteElogStringArg()
     fflua.reg(defSymbolDatabase);
     fflua.reg(defLuaPlugin);
 
-    fflua.set_global_variable("_tokenizer", this->_tokenizer);
     fflua.set_global_variable("_checkPlugin", this);
+    fflua.set_global_variable("_tokenizer", this->_tokenizer);
+    fflua.set_global_variable("_settings", this->_settings);
 
-    fflua.run_string("print(\"hello\")");
+//     fflua.run_string("print(\"hello\")");
+// 
+//     fflua.run_string("print(\"isC: \" .. tostring(_tokenizer:isC()))");
+//     fflua.run_string("print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
+// 
+//     fflua.run_string("print(\"str: \" .. _tokenizer:tokens():str())");
+//     fflua.run_string("print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\", 0)))");
+//     fflua.run_string("print(_tokenizer:tokens():type())");
+//     fflua.run_string("print(\"Token::eFunction: \" .. TokenType.eFunction)");
 
-    fflua.run_string("print(\"isC: \" .. tostring(_tokenizer:isC()))");
-    fflua.run_string("print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
+//     std::cout << "runSimplifiedChecks:" << fflua.is_function_exists("runSimplifiedChecks") << std::endl;
+//     std::cout << "Match:" << fflua.is_function_exists("Match") << std::endl;
+//     std::cout << "runSimplifiedChecks222:" << fflua.is_function_exists("runSimplifiedChecks222") << std::endl;
 
-    fflua.run_string("print(\"str: \" .. _tokenizer:tokens():str())");
-    fflua.run_string("print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\", 0)))");
-    fflua.run_string("print(_tokenizer:tokens():type())");
-    fflua.run_string("print(\"Token::eFunction: \" .. TokenType.eFunction)");
+    fflua.load_file("E:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
 
-    fflua.load_file("E:\\lbn\\cppcheck\\bin\\ChekElog.lua");
-
-    return;
-    const Token *tok = findElogPattern(_tokenizer->tokens());
-    const Token *endTok = tok ? tok->next()->link() : nullptr;
-
-    while (tok && endTok) {
-        for (const Token* tmp = tok->next()->next(); tmp != endTok; tmp = tmp->next()) {
-            if (tmp->str() == "(")
-            {
-                tmp = tmp->link();
-                continue;
-            }
-
-            if (tmp->type() == Token::eString)
-            {
-                quoteElogStringArgWith_SError(tmp, tok->str());
-            }
-        }
-
-
-        tok = findElogPattern(endTok->next());
-        endTok = tok ? tok->next()->link() : nullptr;
-    }
+    fflua.call("runSimplifiedChecks");
 }
 //---------------------------------------------------------------------------
-
-
-void LuaPlugin::quoteElogStringArgWith_SError(const Token *tok, const std::string& elogName)
-{
-    std::string literal_str = tok ? tok->str() : "null";
-    reportError(tok, Severity::error,
-        "quoteElogStringArgWith_S",
-        "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().\n"
-        "You should quote literal string argument  " + literal_str + "  of '" + elogName + "' with macro _S().");
-}
-
-const Token* LuaPlugin::findElogPattern(const Token* start)
-{
-    return Token::findmatch(start, "ELOGElog|elog_finish|ELOGSetLastError|ELOGSetLastError_ ( %any%");
-}
 
 void LuaPlugin::luaReportError(const Token *tok, const Severity::SeverityType severity, const char* id, const char* msg, bool inconclusive) {
     reportError(tok, severity, id, msg, inconclusive);
