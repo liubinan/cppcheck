@@ -79,7 +79,7 @@ solution "cppcheck"
 		configuration {"gmake or codeblocks or codelite"}
 			buildoptions {"-std=gnu++11"}
 		
-		configuration {"gmake or codeblocks or codelite", "windows"}
+		configuration {"windows"}
 			links {"shlwapi"}
 
 		configuration "windows"
@@ -164,7 +164,7 @@ solution "cppcheck"
 		configuration {"gmake or codeblocks or codelite"}
 			buildoptions {"-std=gnu++11"}
 		
-		configuration {"gmake or codeblocks or codelite", "windows"}
+		configuration {"windows"}
 			links {"shlwapi"}
 
 		configuration "windows"
