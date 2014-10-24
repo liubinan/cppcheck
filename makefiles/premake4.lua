@@ -151,12 +151,15 @@ solution "cppcheck"
 			"../test/*.cpp",
 			"../cli/*.h",
 			"../cli/*.cpp",
+			"../externals/fflua/**.h",
 		}
 		excludes {"../cli/main.cpp"}
         includedirs { 
 			"../lib",
 			"../cli",
 			"../externals/tinyxml",
+			"../lua",
+			"../externals/fflua",
 		}
         links {"cppcheck", "lua"}
         targetdir("bin")

@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Cppcheck - A tool for static C/C++ code analysis
 * Copyright (C) 2007-2014 Daniel Marjamäki and Cppcheck team.
 *
@@ -21,11 +21,38 @@
 #include "testsuite.h"
 #include <sstream>
 
+#include "lua/fflua.h"
+using namespace ff;
+
 extern std::ostringstream errout;
+
+void defTestFixture(lua_State* L)
+{
+    fflua_register_t<TestFixture, int()> test_fixtrue_reg(L, "TestFixture");
+    test_fixtrue_reg.def(&TestFixture::classname, "classname");
+	test_fixtrue_reg.def(&TestFixture::testToRun, "testToRun");
+	test_fixtrue_reg.def(&TestFixture::gcc_style_errors, "gcc_style_errors");
+	test_fixtrue_reg.def(&TestFixture::quiet_tests, "quiet_tests");
+	test_fixtrue_reg.def(&TestFixture::currentTest, "currentTest");
+	test_fixtrue_reg.def(&TestFixture::prepareTest, "prepareTest");
+	test_fixtrue_reg.def(&TestFixture::assert_, "assert_");
+	//test_fixtrue_reg.def(&TestFixture::todoAssert, "todoAssert");
+	//test_fixtrue_reg.def(&TestFixture::assertEquals, "assertEquals");
+	test_fixtrue_reg.def(&TestFixture::assertEqualsDouble, "assertEqualsDouble");
+	//test_fixtrue_reg.def(&TestFixture::todoAssertEquals, "todoAssertEquals");
+	test_fixtrue_reg.def(&TestFixture::assertThrowFail, "assertThrowFail");
+	test_fixtrue_reg.def(&TestFixture::complainMissingLib, "complainMissingLib");
+	//test_fixtrue_reg.def(&TestFixture::processOptions, "processOptions");
+}
 
 class TestLuaPlugin : public TestFixture {
 public:
     TestLuaPlugin() : TestFixture("TestLuaPlugin") {}
+
+public:
+	std::string err_out() {
+		return ::errout.str();
+	}
 
 private:
     void check(

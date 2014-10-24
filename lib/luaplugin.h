@@ -6,6 +6,8 @@
 #include "config.h"
 #include "check.h"
 
+#include "lua/fflua.h"
+
 /// @addtogroup Checks
 /// @{
 
@@ -37,7 +39,8 @@ public:
 
 public:
     void luaReportError(const Token *tok, const Severity::SeverityType severity, const char* id, const char* msg, bool inconclusive);
-
+	void regLuaClasses(ff::fflua_t& fflua);
+	
 private:
     void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const {
         LuaPlugin c(0, settings, errorLogger);

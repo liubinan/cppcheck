@@ -37,7 +37,7 @@ private:
     static std::size_t succeeded_todos_counter;
     static std::set<std::string> missingLibs;
 
-protected:
+public:
     Library _lib;
     std::string classname;
     std::string testToRun;

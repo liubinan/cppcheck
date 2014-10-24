@@ -417,6 +417,19 @@ void defLuaPlugin(lua_State* L)
     luaplugin_reg.def(&LuaPlugin::luaReportError, "reportError");
 }
 
+void LuaPlugin::regLuaClasses(ff::fflua_t& fflua)
+{
+	fflua.reg(defToken);
+    fflua.reg(defTokenizer);
+    fflua.reg(defSeverity);
+    fflua.reg(defScope);
+    fflua.reg(defType);
+    fflua.reg(defFunction);
+    fflua.reg(defVariable);
+    fflua.reg(defSymbolDatabase);
+    fflua.reg(defLuaPlugin);
+}
+
 void LuaPlugin::runSimplifiedChecks()
 {
     //lua_tinker::class_add<AccessControl>(L, "AccessControl");
