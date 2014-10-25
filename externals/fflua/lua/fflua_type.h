@@ -279,6 +279,53 @@ struct lua_op_t<cpp_void_t>
 };
 
 template<>
+struct lua_op_t<lua_function_t>
+{
+	static void push_stack(lua_State* ls_, lua_function_t arg_)
+	{
+		if (arg_ == nullptr)
+		{
+			lua_pushnil(ls_);
+		}
+		lua_pushcfunction(ls_, arg_);
+	}
+
+	static int get_ret_value(lua_State* ls_, int pos_, lua_function_t& param_)
+	{
+		if (lua_isnil(ls_, pos_))
+		{
+			param_ = nullptr;
+			return 0;
+		}
+
+		if (!lua_isfunction(ls_, pos_))
+		{
+			return -1;
+		}
+
+		param_ = lua_tocfunction(ls_, pos_);
+		return 0;
+	}
+
+	static int lua_to_value(lua_State* ls_, int pos_, lua_function_t& param_)
+	{
+		if (lua_isnil(ls_, pos_))
+		{
+			param_ = nullptr;
+			return 0;
+		}
+
+		if (!lua_isfunction(ls_, pos_))
+		{
+			return -1;
+		}
+
+		param_ = lua_tocfunction(ls_, pos_);
+		return 0;
+	}
+};
+
+template<>
 struct lua_op_t<int64_t>
 {
     static void push_stack(lua_State* ls_, int64_t arg_)

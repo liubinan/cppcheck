@@ -20,6 +20,7 @@ extern "C"
 using namespace ff;
 //---------------------------------------------------------------------------
 
+std::map<std::string, Check*> lua_checkers;
 
 // Register this check class (by creating a static instance of it)
 namespace {
@@ -54,7 +55,7 @@ namespace {
                     bool check_exists = fflua.is_function_exists("runChecks");
                     std::cout << "runChecks: " << check_exists << std::endl;
 
-                    new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
+					lua_checkers[check_name] = new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
                 }
             }
 
@@ -436,15 +437,7 @@ void LuaPlugin::runSimplifiedChecks()
     //lua_tinker::class_add<ValueFlow::Value>(L, "ValueFlow.Value");
 
     fflua_t fflua;
-    fflua.reg(defToken);
-    fflua.reg(defTokenizer);
-    fflua.reg(defSeverity);
-    fflua.reg(defScope);
-    fflua.reg(defType);
-    fflua.reg(defFunction);
-    fflua.reg(defVariable);
-    fflua.reg(defSymbolDatabase);
-    fflua.reg(defLuaPlugin);
+	regLuaClasses(fflua);
 
     fflua.set_global_variable("_checkPlugin", this);
     fflua.set_global_variable("_tokenizer", this->_tokenizer);
@@ -464,11 +457,31 @@ void LuaPlugin::runSimplifiedChecks()
 //     std::cout << "Match:" << fflua.is_function_exists("Match") << std::endl;
 //     std::cout << "runSimplifiedChecks222:" << fflua.is_function_exists("runSimplifiedChecks222") << std::endl;
 
-    fflua.load_file("d:\\lbn\\cppcheck\\makefiles\\bin\\checkers\\ChekElog.lua");
+    fflua.load_file(this->luaFile_);
 
-    fflua.call("runSimplifiedChecks");
+	if (fflua.is_function_exists("runSimplifiedChecks"))
+	{
+		fflua.call("runSimplifiedChecks");
+	}
 }
 //---------------------------------------------------------------------------
+
+void LuaPlugin::runChecks()
+{
+	fflua_t fflua;
+	regLuaClasses(fflua);
+
+	fflua.set_global_variable("_checkPlugin", this);
+	fflua.set_global_variable("_tokenizer", this->_tokenizer);
+	fflua.set_global_variable("_settings", this->_settings);
+
+	fflua.load_file(this->luaFile_);
+
+	if (fflua.is_function_exists("runChecks"))
+	{
+		fflua.call("runChecks");
+	}
+}
 
 void LuaPlugin::luaReportError(const Token *tok, const Severity::SeverityType severity, const char* id, const char* msg, bool inconclusive) {
     reportError(tok, severity, id, msg, inconclusive);

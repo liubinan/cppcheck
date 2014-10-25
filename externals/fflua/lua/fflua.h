@@ -143,6 +143,17 @@ public:
         return ret;
     }
 
+	bool is_table_exists(const char* field_name_)
+	{
+		bool ret = false;
+
+		lua_getglobal(m_ls, field_name_);
+		ret = lua_istable(m_ls, -1);
+
+		lua_pop(m_ls, 1);
+		return ret;
+	}
+
     template<typename T>
     void  reg(T a);
 

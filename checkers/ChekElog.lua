@@ -41,5 +41,42 @@ do
 		end
 	end
 	
+	function testName()
+		return "test_check_elog"
+	end
+	
+	function checkName()
+		return "check_elog"
+	end
+		
+	test_case = {
+		["test1"] = function() 
+			check(
+				[[void elog_finish(int ecode, char* fmt, ...){}\n
+				int foo() {\n
+				   elog_finish(1,_S("%d"), 1);\n
+				}\n]]
+				);
+			ASSERT_EQUALS("", test_fixture:get_errout());
+
+			check(
+				[[void elog_finish(int ecode, char* fmt, ...){}\n
+				int foo() {\n
+				   elog_finish(1,"%d", 1);\n
+				}\n]]
+				);
+			ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'elog_finish' with macro _S().\n", test_fixture:get_errout());
+
+			check(
+				[[void elog_finish(int ecode, char* fmt, ...){}\n
+				int foo() {\n
+				   ELOGElog(1,"%d", 1);\n
+				}\n]]
+				);
+			ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'ELOGElog' with macro _S().\n", test_fixture:get_errout());
+
+		end
+	}
+	
 end
 

@@ -19,93 +19,165 @@
 #include "tokenize.h"
 #include "luaplugin.h"
 #include "testsuite.h"
+#include "filelister.h"
 #include <sstream>
+#include <string>
 
 #include "lua/fflua.h"
 using namespace ff;
 
 extern std::ostringstream errout;
 
+void defTestFixture(lua_State* L);
+void defTestLuaPlugin(lua_State* L);
+
+class TestLuaPlugin : public TestFixture {
+public:
+    TestLuaPlugin(const std::string& test_name, const std::string& checker_name, const std::string& lua_file) 
+		: TestFixture(test_name), checker_name(checker_name), lua_file(lua_file) {}
+
+private:
+	std::string lua_file;
+	std::string checker_name;
+public:
+	std::string get_errout() {
+		return errout.str();
+	}
+	void clean_errout() {
+		errout.str("");
+	}
+
+	Check* get_checker_by_name(const std::string& check_name) {
+		for (Check* check : Check::instances())
+		{
+			if (check->name() == check_name)
+			{
+				return check;
+			}
+		}
+		return nullptr;
+	}
+
+public:
+    void check(
+        const char* code,
+        const char *filename = NULL) {
+        // Clear the error buffer..
+        errout.str("");
+
+        Settings settings;
+        settings.addEnabled("all");
+
+        // Tokenize..
+        Tokenizer tokenizer(&settings, this);
+        std::istringstream istr(code);
+        tokenizer.tokenize(istr, filename && filename[0] ? filename : "test.cpp");
+
+        // Check..
+		Check* check = get_checker_by_name(checker_name);
+		if (check)
+		{
+			check->runChecks(&tokenizer, &settings, this);
+			tokenizer.simplifyTokenList2();
+			check->runSimplifiedChecks(&tokenizer, &settings, this);
+		}
+    }
+
+    void run() {
+		fflua_t fflua;
+		LuaPlugin::regLuaClasses(fflua);
+		fflua.reg(defTestFixture);
+		fflua.reg(defTestLuaPlugin);
+		
+		fflua.set_global_variable("test_fixture", this);
+
+		fflua.run_string("check = function(code, filename)"
+						"    filename = filename or '';"
+						"    test_fixture:check(code, filename);"
+						"end"
+						);
+		fflua.run_string("ASSERT_EQUALS = function(expected, actual)"
+						"    test_fixture:assertEquals(debug.getinfo(2).source, debug.getinfo(2).currentline, expected, actual, '');"
+						"end");
+		fflua.load_file(lua_file);
+
+		if (fflua.is_table_exists("test_case"))
+		{
+			fflua.run_string("for test_name, check_func in pairs(test_case) do "
+							"    test_fixture:prepareTest(test_name);"
+							"    check_func();"
+							"end");
+		}
+    }
+};
+
 void defTestFixture(lua_State* L)
 {
-    fflua_register_t<TestFixture, int()> test_fixtrue_reg(L, "TestFixture");
-    test_fixtrue_reg.def(&TestFixture::classname, "classname");
+	fflua_register_t<TestFixture, int()> test_fixtrue_reg(L, "TestFixture");
+	test_fixtrue_reg.def(&TestFixture::classname, "classname");
 	test_fixtrue_reg.def(&TestFixture::testToRun, "testToRun");
 	test_fixtrue_reg.def(&TestFixture::gcc_style_errors, "gcc_style_errors");
 	test_fixtrue_reg.def(&TestFixture::quiet_tests, "quiet_tests");
 	test_fixtrue_reg.def(&TestFixture::currentTest, "currentTest");
 	test_fixtrue_reg.def(&TestFixture::prepareTest, "prepareTest");
 	test_fixtrue_reg.def(&TestFixture::assert_, "assert_");
-	//test_fixtrue_reg.def(&TestFixture::todoAssert, "todoAssert");
-	//test_fixtrue_reg.def(&TestFixture::assertEquals, "assertEquals");
+	// not_imp test_fixtrue_reg.def(&TestFixture::todoAssert, "todoAssert");
+	typedef void (TestFixture::*assertEqualsFunc_t)(const char *filename, unsigned int linenr, const std::string &expected, const std::string &actual, const std::string &msg) const;
+	test_fixtrue_reg.def((assertEqualsFunc_t)&TestFixture::assertEquals, "assertEquals");
 	test_fixtrue_reg.def(&TestFixture::assertEqualsDouble, "assertEqualsDouble");
-	//test_fixtrue_reg.def(&TestFixture::todoAssertEquals, "todoAssertEquals");
+	typedef void (TestFixture::*todoAssertEqualsFunc_t)(const char *filename, unsigned int linenr, const std::string &wanted,
+		const std::string &current, const std::string &actual) const;
+	test_fixtrue_reg.def((todoAssertEqualsFunc_t)&TestFixture::todoAssertEquals, "todoAssertEquals");
 	test_fixtrue_reg.def(&TestFixture::assertThrowFail, "assertThrowFail");
 	test_fixtrue_reg.def(&TestFixture::complainMissingLib, "complainMissingLib");
 	//test_fixtrue_reg.def(&TestFixture::processOptions, "processOptions");
 }
 
-class TestLuaPlugin : public TestFixture {
-public:
-    TestLuaPlugin() : TestFixture("TestLuaPlugin") {}
+void defTestLuaPlugin(lua_State* L)
+{
+	fflua_register_t<TestLuaPlugin, int()> test_plugin_reg(L, "TestLuaPlugin", "TestFixture");
+	test_plugin_reg.def(&TestLuaPlugin::get_errout, "get_errout");
+	test_plugin_reg.def(&TestLuaPlugin::clean_errout, "clean_errout");
+	test_plugin_reg.def(&TestLuaPlugin::get_checker_by_name, "get_checker_by_name");
+	test_plugin_reg.def(&TestLuaPlugin::check, "check");
+}
 
-public:
-	std::string err_out() {
-		return ::errout.str();
-	}
+namespace {
+	struct init_test_lua_plugin_t {
+		init_test_lua_plugin_t() {
+			fflua_t fflua;
 
-private:
-    void check(
-        const char code[],
-        const char *filename = NULL) {
-        // Clear the error buffer..
-        errout.str("");
+			std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
+			std::string lua_plugin_dir = exe_dir + "/checkers";
+			std::map<std::string, std::size_t> files;
+			std::set<std::string> lua_extra;
+			lua_extra.insert(".lua");
 
-        Settings settings;
-        settings.addEnabled("warning");
+			FileLister::recursiveAddFiles(files, lua_plugin_dir, lua_extra);
 
-        // Tokenize..
-        Tokenizer tokenizer(&settings, this);
-        std::istringstream istr(code);
-        tokenizer.tokenize(istr, filename ? filename : "test.cpp");
+			for (auto f : files)
+			{
+				std::string lua_file = f.first;
+				if (Path::getFilenameExtensionInLowerCase(lua_file) != ".lua") {
+					continue;
+				}
+				fflua.load_file(lua_file);
 
-        // Check..
-        LuaPlugin luaPlugin(&tokenizer, &settings, this);
-        tokenizer.simplifyTokenList2();
-        luaPlugin.runSimplifiedChecks(&tokenizer, &settings, this);
-    }
+				if (fflua.is_function_exists("checkName") 
+					&& fflua.is_function_exists("testName")
+					&& fflua.is_table_exists("test_case"))
+				{
+					std::string check_name = fflua.call<string>("checkName");
+					std::cout << "checkName: " << check_name << std::endl;
 
-    void run() {
-        TEST_CASE(elogQuoteStringArgWith_S);
-    }
+					std::string test_name = fflua.call<string>("testName");
+					std::cout << "testName: " << check_name << std::endl;
+					
+					new TestLuaPlugin(test_name, check_name, lua_file);
+				}
+			}
 
+		}
+	}init_test_lua_plugin;
 
-    void elogQuoteStringArgWith_S() {
-        check(
-            "void elog_finish(int ecode, char* fmt, ...){}\n"
-            "int foo() {\n"
-            "   elog_finish(1,_S(\"%d\"), 1);\n"
-            "}\n"
-            );
-        ASSERT_EQUALS("", errout.str());
-        
-        check(
-            "void elog_finish(int ecode, char* fmt, ...){}\n"
-            "int foo() {\n"
-            "   elog_finish(1,\"%d\", 1);\n"
-            "}\n"
-            );
-        ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'elog_finish' with macro _S().\n", errout.str());
-
-        check(
-            "void elog_finish(int ecode, char* fmt, ...){}\n"
-            "int foo() {\n"
-            "   ELOGElog(1,\"%d\", 1);\n"
-            "}\n"
-            );
-        ASSERT_EQUALS("[test.cpp:3]: (error) You should quote literal string argument  \"%d\"  of 'ELOGElog' with macro _S().\n", errout.str());
-    }
-
-};
-
-REGISTER_TEST(TestLuaPlugin)
+}
