@@ -6,6 +6,7 @@
 #include <lua.hpp>
 #include <iostream>
 #include <string>
+#include <algorithm>
 using namespace std;
 
 #include "lua/fflua_type.h"
@@ -72,9 +73,11 @@ public:
            new_path += ";";
         }
 
-        new_path += str_;
+		std::string path_to_add = str_;
+		std::replace(path_to_add.begin(), path_to_add.end(), '\\', '/');
+		new_path += path_to_add;
 
-        if (str_[str_.length() - 1] != '/')
+		if (path_to_add[path_to_add.length() - 1] != '/')
         {
             new_path += "/";
         }

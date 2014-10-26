@@ -85,20 +85,26 @@ public:
 
     void run() {
 		fflua_t fflua;
+		std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
+		std::string lua_plugin_dir = exe_dir + "/checkers";
+		fflua.add_package_path(lua_plugin_dir);
+
 		LuaPlugin::regLuaClasses(fflua);
 		fflua.reg(defTestFixture);
 		fflua.reg(defTestLuaPlugin);
 		
 		fflua.set_global_variable("test_fixture", this);
 
+		/*
 		fflua.run_string("check = function(code, filename)"
 						"    filename = filename or '';"
 						"    test_fixture:check(code, filename);"
 						"end"
 						);
 		fflua.run_string("ASSERT_EQUALS = function(expected, actual)"
-						"    test_fixture:assertEquals(debug.getinfo(2).source, debug.getinfo(2).currentline, expected, actual, '');"
+						"    test_fixture:assertEquals(debug.getinfo(2).source, debug.getinfo(2).currentline, tostring(expected), tostring(actual), '');"
 						"end");
+						*/
 		fflua.load_file(lua_file);
 
 		if (fflua.is_table_exists("test_case"))
@@ -145,8 +151,6 @@ void defTestLuaPlugin(lua_State* L)
 namespace {
 	struct init_test_lua_plugin_t {
 		init_test_lua_plugin_t() {
-			fflua_t fflua;
-
 			std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
 			std::string lua_plugin_dir = exe_dir + "/checkers";
 			std::map<std::string, std::size_t> files;
@@ -157,6 +161,9 @@ namespace {
 
 			for (auto f : files)
 			{
+				fflua_t fflua;
+				fflua.add_package_path(lua_plugin_dir);
+
 				std::string lua_file = f.first;
 				if (Path::getFilenameExtensionInLowerCase(lua_file) != ".lua") {
 					continue;

@@ -26,8 +26,6 @@ std::map<std::string, Check*> lua_checkers;
 namespace {
     struct init_lua_plugin_t {
         init_lua_plugin_t() {
-            fflua_t fflua;
-
             std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
             std::string lua_plugin_dir = exe_dir + "/checkers";
             std::map<std::string, std::size_t> files;
@@ -38,10 +36,13 @@ namespace {
 
             for (auto f : files)
             {
+				fflua_t fflua;
+
                 std::string lua_file = f.first;
                 if (Path::getFilenameExtensionInLowerCase(lua_file) != ".lua") {
                     continue;
                 }
+				fflua.add_package_path(lua_plugin_dir);
                 fflua.load_file(lua_file);
 
                 if (fflua.is_function_exists("myName"))
@@ -437,6 +438,10 @@ void LuaPlugin::runSimplifiedChecks()
     //lua_tinker::class_add<ValueFlow::Value>(L, "ValueFlow.Value");
 
     fflua_t fflua;
+	std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
+	std::string lua_plugin_dir = exe_dir + "/checkers";
+	fflua.add_package_path(lua_plugin_dir);
+
 	regLuaClasses(fflua);
 
     fflua.set_global_variable("_checkPlugin", this);
@@ -469,6 +474,10 @@ void LuaPlugin::runSimplifiedChecks()
 void LuaPlugin::runChecks()
 {
 	fflua_t fflua;
+	std::string exe_dir = Path::getPathFromFilename(Path::getModuleFileName());
+	std::string lua_plugin_dir = exe_dir + "/checkers";
+	fflua.add_package_path(lua_plugin_dir);
+
 	regLuaClasses(fflua);
 
 	fflua.set_global_variable("_checkPlugin", this);

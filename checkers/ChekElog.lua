@@ -1,4 +1,6 @@
 
+require 'test_utils'
+
 do
 	function findElogPattern(start)
 		return findmatch(start, "ELOGElog|elog_finish|ELOGSetLastError|ELOGSetLastError_ ( %any%", nil, 0);
