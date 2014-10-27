@@ -25,7 +25,7 @@ extern std::ostringstream errout;
 
 class TestAssert : public TestFixture {
 public:
-    TestAssert() : TestFixture("TestAssert") {}
+    TestAssert() : TestFixture("TestAssert111") {}
 
 private:
     void check(

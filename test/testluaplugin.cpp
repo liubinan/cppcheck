@@ -73,6 +73,9 @@ public:
         std::istringstream istr(code);
         tokenizer.tokenize(istr, filename && filename[0] ? filename : "test.cpp");
 
+        //std::cout << code << std::endl;
+        //tokenizer.dump(std::cout);
+
         // Check..
 		Check* check = get_checker_by_name(checker_name);
 		if (check)
@@ -178,7 +181,7 @@ namespace {
 					std::cout << "checkName: " << check_name << std::endl;
 
 					std::string test_name = fflua.call<string>("testName");
-					std::cout << "testName: " << check_name << std::endl;
+					std::cout << "testName: " << test_name << std::endl;
 					
 					new TestLuaPlugin(test_name, check_name, lua_file);
 				}

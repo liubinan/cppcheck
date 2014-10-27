@@ -110,7 +110,7 @@ void CheckAssert::checkVariableAssignment(const Token* assignTok)
 {
     const Variable* v = assignTok->previous()->variable();
     if (!v) return;
-
+    
     // assignment
     if (assignTok->isAssignmentOp() || assignTok->type() == Token::eIncDecOp) {
 
