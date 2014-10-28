@@ -155,8 +155,7 @@ public:
      * @param str id for the extra check, e.g. "style"
      * @return true if the check is enabled.
      */
-    template<typename T>
-    bool isEnabled(T&& str) const {
+    bool isEnabled(const std::string& str) const {
         return bool(_enabled.find(str) != _enabled.end());
     }
 
@@ -166,8 +165,7 @@ public:
      * @param str name for the check, e.g. "IO"
      * @return true if the check is enabled.
      */
-    template<typename T>
-    bool isEnabledCheck(T&& str) const {
+    bool isEnabledCheck(const std::string& str) const {
         return bool(_enabled_check.empty() || _enabled_check.find(str) != _enabled_check.end());
     }
 

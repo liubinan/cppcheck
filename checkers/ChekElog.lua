@@ -1,7 +1,11 @@
-
+require 'check_utils'
 require 'test_utils'
 
 do
+    function myName()
+        return "CheckElog"
+    end
+    
     function findElogPattern(start)
         return findmatch(start, "ELOGElog|elog_finish|ELOGSetLastError|ELOGSetLastError_ ( %any%", nil, 0);
     end
@@ -15,10 +19,6 @@ do
             false);
     end
     
-    function myName()
-        return "CheckElog"
-    end
-    
     function runSimplifiedChecks()
         tok = findElogPattern(_tokenizer:tokens());
         endTok = tok and (tok:next():link());
@@ -26,7 +26,6 @@ do
         while (tok and endTok) do
             tmp = tok:next():next();
             while not IsSameToken(tmp, endTok) do
-
                 if tmp:str() == "(" then
                     tmp = tmp:link();
                 else

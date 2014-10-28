@@ -97,26 +97,21 @@ public:
 		fflua.reg(defTestLuaPlugin);
 		
 		fflua.set_global_variable("test_fixture", this);
+        try {
+		    fflua.load_file(lua_file);
 
-		/*
-		fflua.run_string("check = function(code, filename)"
-						"    filename = filename or '';"
-						"    test_fixture:check(code, filename);"
-						"end"
-						);
-		fflua.run_string("ASSERT_EQUALS = function(expected, actual)"
-						"    test_fixture:assertEquals(debug.getinfo(2).source, debug.getinfo(2).currentline, tostring(expected), tostring(actual), '');"
-						"end");
-						*/
-		fflua.load_file(lua_file);
-
-		if (fflua.is_table_exists("test_case"))
-		{
-			fflua.run_string("for test_name, check_func in pairs(test_case) do "
-							"    test_fixture:prepareTest(test_name);"
-							"    check_func();"
-							"end");
-		}
+		    if (fflua.is_table_exists("test_case"))
+		    {
+			    fflua.run_string("for test_name, check_func in pairs(test_case) do "
+							    "    test_fixture:prepareTest(test_name);"
+							    "    check_func();"
+							    "end");
+		    }
+        }
+        catch (lua_exception_t& e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
     }
 };
 

@@ -128,7 +128,7 @@ void defToken(lua_State* L) {
     token_reg.def((printOut1)&Token::printOut, "printOut");
     token_reg.def((GetTokenFunc)&Token::link, "link");
     token_reg.def((GetScopeFunc)&Token::scope, "scope");
-    token_reg.def((GetFunctionFunc)&Token::function, "function");
+    token_reg.def((GetFunctionFunc)&Token::function, "_function");
     token_reg.def((GetVariableFunc)&Token::variable, "variable");
     token_reg.def(&Token::strValue, "strValue");
     token_reg.def(&Token::progressValue, "progressValue");
@@ -188,10 +188,11 @@ void defToken(lua_State* L) {
 
 void defTokenizer(lua_State* L)
 {
-    fflua_register_t<Tokenizer, int()>(L, "Tokenizer")
-    .def(&Tokenizer::isC, "isC")
-    .def(&Tokenizer::isCPP, "isCPP")
-    .def(&Tokenizer::tokens, "tokens");
+    fflua_register_t<Tokenizer, int()> tokenizer_reg(L, "Tokenizer");
+    tokenizer_reg.def(&Tokenizer::isC, "isC");
+    tokenizer_reg.def(&Tokenizer::isCPP, "isCPP");
+    tokenizer_reg.def(&Tokenizer::getSymbolDatabase, "getSymbolDatabase");
+    tokenizer_reg.def(&Tokenizer::tokens, "tokens");
 }
 
 void defSeverity(lua_State* L)
@@ -231,8 +232,8 @@ void defScope(lua_State* L)
     scope_reg.def(&Scope::definedType, "definedType");
     scope_reg.def(&Scope::definedTypes, "definedTypes");
     scope_reg.def(const_cast<Scope *Scope::*>(&Scope::functionOf), "functionOf");
-    scope_reg.def(&Scope::function, "function");
-
+    scope_reg.def(&Scope::function, "_function");
+    
     scope_reg.def(&Scope::isClassOrStruct, "isClassOrStruct");
     scope_reg.def(&Scope::isExecutable, "isExecutable");
     scope_reg.def(&Scope::isLocal, "isLocal");
@@ -412,6 +413,70 @@ void defSymbolDatabase(lua_State* L)
 //fixme database_reg.def(&SymbolDatabase::printXml, "printXml");
 }
 
+void defSettings(lua_State* L)
+{
+    fflua_register_t<Settings, int()> settings_reg(L, "Settings");
+
+    settings_reg.def(&Settings::debug, "_debug");
+    settings_reg.def(&Settings::debugwarnings, "debugwarnings");
+    settings_reg.def(&Settings::debugFalsePositive, "debugFalsePositive");
+    settings_reg.def(&Settings::dump, "dump");
+    settings_reg.def(&Settings::exceptionHandling, "exceptionHandling");
+    settings_reg.def(&Settings::inconclusive, "inconclusive");
+    settings_reg.def(&Settings::experimental, "experimental");
+    settings_reg.def(&Settings::_errorsOnly, "_errorsOnly");
+    settings_reg.def(&Settings::_inlineSuppressions, "_inlineSuppressions");
+    settings_reg.def(&Settings::_verbose, "_verbose");
+    settings_reg.def(&Settings::terminate, "terminate");
+    settings_reg.def(&Settings::terminated, "terminated");
+    settings_reg.def(&Settings::_force, "_force");
+    settings_reg.def(&Settings::_relativePaths, "_relativePaths");
+    settings_reg.def(&Settings::_basePaths, "_basePaths");
+    settings_reg.def(&Settings::_xml, "_xml");
+    settings_reg.def(&Settings::_xml_version, "_xml_version");
+    settings_reg.def(&Settings::_jobs, "_jobs");
+    settings_reg.def(&Settings::_loadAverage, "_loadAverage");
+    settings_reg.def(&Settings::_exitCode, "_exitCode");
+    settings_reg.def(&Settings::_outputFormat, "_outputFormat");
+    settings_reg.def(&Settings::_showtime, "_showtime");
+    settings_reg.def(&Settings::_includePaths, "_includePaths");
+    typedef const std::string &(Settings::*GetAppendFunc_t)() const;
+    settings_reg.def((GetAppendFunc_t)&Settings::append, "append");
+    settings_reg.def(&Settings::_maxConfigs, "_maxConfigs");
+    settings_reg.def(&Settings::isEnabled, "isEnabled");
+    settings_reg.def(&Settings::isEnabledCheck, "isEnabledCheck");
+    settings_reg.def(&Settings::addEnabled, "addEnabled");
+    settings_reg.def(&Settings::addEnabledCheck, "addEnabledCheck");
+    settings_reg.def(&Settings::clearEnabled, "clearEnabled");
+    settings_reg.def(&Settings::enforcedLang, "enforcedLang");
+//fixme    settings_reg.def(&Settings::nomsg, "nomsg");
+//fixme    settings_reg.def(&Settings::nofail, "nofail");
+    settings_reg.def(&Settings::userDefines, "userDefines");
+    settings_reg.def(&Settings::userUndefs, "userUndefs");
+    settings_reg.def(&Settings::userIncludes, "userIncludes");
+    settings_reg.def(&Settings::configExcludePaths, "configExcludePaths");
+    settings_reg.def(&Settings::reportProgress, "reportProgress");
+//fixme    settings_reg.def(&Settings::library, "library");
+    settings_reg.def(&Settings::checkConfiguration, "checkConfiguration");
+    settings_reg.def(&Settings::checkLibrary, "checkLibrary");
+//fixme    settings_reg.def(&Settings::standards, "standards");
+    settings_reg.def(&Settings::sizeof_bool, "sizeof_bool");
+    settings_reg.def(&Settings::sizeof_short, "sizeof_short");
+    settings_reg.def(&Settings::sizeof_int, "sizeof_int");
+    settings_reg.def(&Settings::sizeof_long, "sizeof_long");
+    settings_reg.def(&Settings::sizeof_long_long, "sizeof_long_long");
+    settings_reg.def(&Settings::sizeof_float, "sizeof_float");
+    settings_reg.def(&Settings::sizeof_double, "sizeof_double");
+    settings_reg.def(&Settings::sizeof_long_double, "sizeof_long_double");
+    settings_reg.def(&Settings::sizeof_wchar_t, "sizeof_wchar_t");
+    settings_reg.def(&Settings::sizeof_size_t, "sizeof_size_t");
+    settings_reg.def(&Settings::sizeof_pointer, "sizeof_pointer");
+//fixme    settings_reg.def(&Settings::platform, "platform");
+    settings_reg.def(&Settings::platformFile, "platformFile");
+    settings_reg.def(&Settings::isWindowsPlatform, "isWindowsPlatform");
+    settings_reg.def(&Settings::configurationExcluded, "configurationExcluded");
+}
+
 void defLuaPlugin(lua_State* L)
 {
     fflua_register_t<LuaPlugin, int()> luaplugin_reg(L, "LuaPlugin");
@@ -430,6 +495,7 @@ void LuaPlugin::regLuaClasses(ff::fflua_t& fflua)
     fflua.reg(defVariable);
     fflua.reg(defSymbolDatabase);
     fflua.reg(defLuaPlugin);
+    fflua.reg(defSettings);
 }
 
 void LuaPlugin::runSimplifiedChecks()
@@ -448,26 +514,18 @@ void LuaPlugin::runSimplifiedChecks()
     fflua.set_global_variable("_tokenizer", this->_tokenizer);
     fflua.set_global_variable("_settings", this->_settings);
 
-//     fflua.run_string("print(\"hello\")");
-//
-//     fflua.run_string("print(\"isC: \" .. tostring(_tokenizer:isC()))");
-//     fflua.run_string("print(\"isCPP: \" .. tostring(_tokenizer:isCPP()))");
-//
-//     fflua.run_string("print(\"str: \" .. _tokenizer:tokens():str())");
-//     fflua.run_string("print(\"Match: \" .. tostring(Match(_tokenizer:tokens(), \"void\", 0)))");
-//     fflua.run_string("print(_tokenizer:tokens():type())");
-//     fflua.run_string("print(\"Token::eFunction: \" .. TokenType.eFunction)");
+    try {
+        fflua.load_file(this->luaFile_);
 
-//     std::cout << "runSimplifiedChecks:" << fflua.is_function_exists("runSimplifiedChecks") << std::endl;
-//     std::cout << "Match:" << fflua.is_function_exists("Match") << std::endl;
-//     std::cout << "runSimplifiedChecks222:" << fflua.is_function_exists("runSimplifiedChecks222") << std::endl;
-
-    fflua.load_file(this->luaFile_);
-
-	if (fflua.is_function_exists("runSimplifiedChecks"))
-	{
-		fflua.call("runSimplifiedChecks");
-	}
+	    if (fflua.is_function_exists("runSimplifiedChecks"))
+	    {
+		    fflua.call("runSimplifiedChecks");
+	    }
+    }
+    catch (lua_exception_t& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
 }
 //---------------------------------------------------------------------------
 
@@ -484,12 +542,20 @@ void LuaPlugin::runChecks()
 	fflua.set_global_variable("_tokenizer", this->_tokenizer);
 	fflua.set_global_variable("_settings", this->_settings);
 
-	fflua.load_file(this->luaFile_);
+    try
+    {
+	    fflua.load_file(this->luaFile_);
 
-	if (fflua.is_function_exists("runChecks"))
-	{
-		fflua.call("runChecks");
-	}
+        if (fflua.is_function_exists("runChecks"))
+        {
+            fflua.call("runChecks");
+        }
+    }
+    catch (lua_exception_t& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
 }
 
 void LuaPlugin::luaReportError(const Token *tok, const Severity::SeverityType severity, const char* id, const char* msg, bool inconclusive) {

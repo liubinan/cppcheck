@@ -2,11 +2,11 @@ require "test_utils"
 
 do
     function testName()
-        return "Test64BitPortability"
+        return "TestCheck64Bit"
     end
     
     function checkName()
-        return "64-bit portability"
+        return "check64bit"
     end
         
     test_case = {
