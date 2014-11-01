@@ -2,11 +2,11 @@ require "test_utils"
 
 do
     function testName()
-        return "TestAssert"
+        return "TestCheckAssert"
     end
 
     function checkName()
-        return "Assert"
+        return "CheckAssert"
     end
 
     test_case = {

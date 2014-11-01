@@ -48,13 +48,13 @@ namespace {
                 if (fflua.is_function_exists("myName"))
                 {
                     std::string check_name = fflua.call<string>("myName");
-                    std::cout << "myName: " << check_name << std::endl;
+                    //std::cout << "myName: " << check_name << std::endl;
 
                     bool simple_check_exists = fflua.is_function_exists("runSimplifiedChecks");
-                    std::cout << "runSimplifiedChecks: " << simple_check_exists << std::endl;
+                    //std::cout << "runSimplifiedChecks: " << simple_check_exists << std::endl;
 
                     bool check_exists = fflua.is_function_exists("runChecks");
-                    std::cout << "runChecks: " << check_exists << std::endl;
+                    //std::cout << "runChecks: " << check_exists << std::endl;
 
 					lua_checkers[check_name] = new LuaPlugin(check_name, lua_file, check_exists, simple_check_exists);
                 }

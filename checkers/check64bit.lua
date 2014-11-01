@@ -84,7 +84,7 @@ do
                     if Match(tok, "return %var%|%num% [;+]", 0) and not simpleMatch(tok, "return 0 ;") then
                         local ValType = { NO=1, INT=2, PTR=3, PTRDIFF=4 };
                         local val_type = ValType.NO;
-                        local tok2 = tok:next()
+        
                         for tok2 in iter_tokens(tok:next()) do
                             if ((val_type == ValType.NO or val_type == ValType.INT) and Match(tok2, "%var% [+;]", 0) and isaddr(tok2:variable())) then
                                 val_type = ValType.PTR;

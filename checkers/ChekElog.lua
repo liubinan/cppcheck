@@ -20,11 +20,11 @@ do
     end
     
     function runSimplifiedChecks()
-        tok = findElogPattern(_tokenizer:tokens());
-        endTok = tok and (tok:next():link());
+        local tok = findElogPattern(_tokenizer:tokens());
+        local endTok = tok and (tok:next():link());
 
         while (tok and endTok) do
-            tmp = tok:next():next();
+            local tmp = tok:next():next();
             while not IsSameToken(tmp, endTok) do
                 if tmp:str() == "(" then
                     tmp = tmp:link();

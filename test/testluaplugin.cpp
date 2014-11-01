@@ -84,6 +84,11 @@ public:
 			tokenizer.simplifyTokenList2();
 			check->runSimplifiedChecks(&tokenizer, &settings, this);
 		}
+        else
+        {
+            std::cerr << "can't find checker with name: " << checker_name << std::endl;
+        }
+
     }
 
     void run() {
@@ -173,10 +178,10 @@ namespace {
 					&& fflua.is_table_exists("test_case"))
 				{
 					std::string check_name = fflua.call<string>("checkName");
-					std::cout << "checkName: " << check_name << std::endl;
+					//std::cout << "checkName: " << check_name << std::endl;
 
 					std::string test_name = fflua.call<string>("testName");
-					std::cout << "testName: " << test_name << std::endl;
+					//std::cout << "testName: " << test_name << std::endl;
 					
 					new TestLuaPlugin(test_name, check_name, lua_file);
 				}
