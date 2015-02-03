@@ -1,4 +1,6 @@
+premake4.exe --os=windows vs2008
 premake4.exe --os=windows vs2010
+premake4.exe --os=windows vs2012
 premake4.exe --os=windows gmake
 premake4.exe --os=windows codelite
 premake4.exe --os=windows codeblocks

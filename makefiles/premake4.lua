@@ -60,42 +60,6 @@ solution "cppcheck"
         defines {"WIN32", "_CRT_SECURE_NO_WARNINGS"}
         buildoptions {"-wd4996"}
  
-    -- 设置cli工程
-    project "cli"
-		targetname "cppcheck"
-        kind "ConsoleApp"
-        language "C++"
-        files { 
-			"../cli/**.h", 
-			"../cli/*.cpp",
-		}
-        includedirs { 
-			"../cli",
-			"../lib",
-		}
-        links {"cppcheck", "lua"}
-        targetdir("bin")
-		
-		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++11"}
-		
-		configuration {"windows"}
-			links {"shlwapi"}
-
-		configuration "windows"
-		    postbuildcommands { 
-				[[cmd /c "echo D | xcopy /y ..\\..\\..\\cfg ..\\..\\bin\\cfg"]],
-				[[cmd /c "echo D | xcopy /y ..\\..\\..\\checkers ..\\..\\bin\\checkers"]],
-				[[cmd /c "echo D | xcopy /y ..\\..\\..\\rules ..\\..\\bin\\rules"]],
-			}
-			
-		configuration "not windows"
-		    postbuildcommands { 
-				[[cp -rf ../../../cfg ../../bin/]],
-				[[cp -rf ../../../checkers ../../bin/]],
-				[[cp -rf ../../../checkers ../../bin/]],
-			}
-
     project "cppcheck"
         kind "StaticLib"
         language "C++"
@@ -117,7 +81,7 @@ solution "cppcheck"
         targetdir("bin")
 		
 		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++11"}
+			buildoptions {"-std=gnu++0x"}
 			
 		configuration "vs*"
 			defines {
@@ -142,6 +106,43 @@ solution "cppcheck"
 				"LUA_WIN",
 			}
 
+    -- 设置cli工程
+    project "cli"
+		targetname "cppcheck"
+        kind "ConsoleApp"
+        language "C++"
+        files { 
+			"../cli/**.h", 
+			"../cli/*.cpp",
+		}
+        includedirs { 
+			"../cli",
+			"../lib",
+		}
+        links {"cppcheck", "lua"}
+        targetdir("bin")
+		
+		configuration {"gmake or codeblocks or codelite"}
+			buildoptions {"-std=gnu++0x"}
+		
+		configuration {"windows"}
+			links {"shlwapi"}
+
+		configuration "windows"
+		    postbuildcommands { 
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\cfg ..\\..\\bin\\cfg"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\checkers ..\\..\\bin\\checkers"]],
+				[[cmd /c "echo D | xcopy /y ..\\..\\..\\rules ..\\..\\bin\\rules"]],
+			}
+			
+		configuration "not windows"
+		    postbuildcommands { 
+				[[cp -rf ../../../cfg ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+				[[cp -rf ../../../checkers ../../bin/]],
+			}
+
+
 	-- 测试工程
 	project "testrunner"
         kind "ConsoleApp"
@@ -165,7 +166,7 @@ solution "cppcheck"
         targetdir("bin")
 		
 		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++11"}
+			buildoptions {"-std=gnu++0x"}
 		
 		configuration {"windows"}
 			links {"shlwapi"}
