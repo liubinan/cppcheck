@@ -13,9 +13,11 @@
 #include <type_traits>
 using namespace std;
 
+#ifdef _MSC_VER
 #if (_MSC_VER <= 1700)
 #define strtoll _strtoi64
 #define strtoull _strtoui64
+#endif
 #endif
 
 namespace ff
@@ -330,10 +332,12 @@ struct lua_op_t<lua_function_t>
 	}
 };
 
+#include <mathlib.h>
+
 template<>
-struct lua_op_t<int64_t>
+struct lua_op_t<MathLib::bigint>
 {
-    static void push_stack(lua_State* ls_, int64_t arg_)
+    static void push_stack(lua_State* ls_, MathLib::bigint arg_)
     {
         stringstream ss;
         ss << arg_;
@@ -341,7 +345,7 @@ struct lua_op_t<int64_t>
         lua_pushlstring(ls_, str.c_str(), str.length());
     }
 
-    static int get_ret_value(lua_State* ls_, int pos_, int64_t& param_)
+    static int get_ret_value(lua_State* ls_, int pos_, MathLib::bigint& param_)
     {
         if (!lua_isstring(ls_, pos_))
         {
@@ -350,22 +354,22 @@ struct lua_op_t<int64_t>
 
         size_t len  = 0;
         const char* src = lua_tolstring(ls_, pos_, &len);
-        param_ = (int64_t)strtoll(src, NULL, 10);
+        param_ = (MathLib::bigint)strtoll(src, NULL, 10);
         return 0;
     }
 
-    static int lua_to_value(lua_State* ls_, int pos_, int64_t& param_)
+    static int lua_to_value(lua_State* ls_, int pos_, MathLib::bigint& param_)
     {
         size_t len = 0;
         const char* str = luaL_checklstring(ls_, pos_, &len);
-        param_ = (int64_t)strtoll(str, NULL, 10);
+        param_ = (MathLib::bigint)strtoll(str, NULL, 10);
         return 0;
     }
 };
 
-template<> struct lua_op_t<uint64_t>
+template<> struct lua_op_t<MathLib::biguint>
 {
-    static void push_stack(lua_State* ls_, uint64_t arg_)
+    static void push_stack(lua_State* ls_, MathLib::biguint arg_)
     {
     	stringstream ss;
 		ss << arg_;
@@ -373,7 +377,7 @@ template<> struct lua_op_t<uint64_t>
 		lua_pushlstring(ls_, str.c_str(), str.length());
     }
 
-    static int get_ret_value(lua_State* ls_, int pos_, uint64_t& param_)
+    static int get_ret_value(lua_State* ls_, int pos_, MathLib::biguint& param_)
     {
         if (!lua_isstring(ls_, pos_))
         {
@@ -382,18 +386,52 @@ template<> struct lua_op_t<uint64_t>
 
         size_t len  = 0;
         const char* src = lua_tolstring(ls_, pos_, &len);
-        param_ = (uint64_t)strtoull(src, NULL, 10);
+        param_ = (MathLib::biguint)strtoull(src, NULL, 10);
         return 0;
     }
 
-    static int lua_to_value(lua_State* ls_, int pos_, uint64_t& param_)
+    static int lua_to_value(lua_State* ls_, int pos_, MathLib::biguint& param_)
     {
         size_t len = 0;
         const char* str = luaL_checklstring(ls_, pos_, &len);
-        param_ = (uint64_t)strtoull(str, NULL, 10);
+        param_ = (MathLib::biguint)strtoull(str, NULL, 10);
         return 0;
     }
 };
+
+#if defined(__GNUC__)
+template<> struct lua_op_t<std::size_t>
+{
+    static void push_stack(lua_State* ls_, std::size_t arg_)
+    {
+    	stringstream ss;
+		ss << arg_;
+		string str = ss.str();
+		lua_pushlstring(ls_, str.c_str(), str.length());
+    }
+
+    static int get_ret_value(lua_State* ls_, int pos_, std::size_t& param_)
+    {
+        if (!lua_isstring(ls_, pos_))
+        {
+            return -1;
+        }
+
+        size_t len  = 0;
+        const char* src = lua_tolstring(ls_, pos_, &len);
+        param_ = (std::size_t)strtoull(src, NULL, 10);
+        return 0;
+    }
+
+    static int lua_to_value(lua_State* ls_, int pos_, std::size_t& param_)
+    {
+        size_t len = 0;
+        const char* str = luaL_checklstring(ls_, pos_, &len);
+        param_ = (std::size_t)strtoull(str, NULL, 10);
+        return 0;
+    }
+};
+#endif
 
 template<> struct lua_op_t<int8_t>
 {

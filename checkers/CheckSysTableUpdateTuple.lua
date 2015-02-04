@@ -6,8 +6,8 @@ do
         return "CheckSysTableUpdateTuple"
     end
     
-    function findFuncPattern(start)
-        return findmatch(start, "systable_update_tuple ( %any%", nil, 0);
+    function findFuncPattern(start, endpos)
+        return findmatch(start, "systable_update_tuple ( %any%", endpos, 0);
     end
     
     function sameArgumentError(tok)
@@ -19,8 +19,8 @@ do
             false);
     end
     
-    function runSimplifiedChecks()
-        local tok = findFuncPattern(_tokenizer:tokens());
+	function checkSysTableUpdateTuple(startPos, endPos)
+		local tok = findFuncPattern(startPos, endPos);
         local endTok = tok and (tok:next():link());
 
         while (tok and endTok) do
@@ -41,11 +41,27 @@ do
                 end
             end
 
-            tok = findFuncPattern(endTok:next());
+            tok = findFuncPattern(endTok:next(), endPos);
             endTok = tok and (tok:next():link());
         end
     end
     
+	function runSimplifiedChecks()
+		local symbolDatabase = _tokenizer:getSymbolDatabase();
+        if not symbolDatabase then
+			return
+		end
+		local functions = symbolDatabase.functionScopes;
+		if not functions then
+			return
+		end
+		for i, scope in ipairs(functions) do
+			if scope._function and scope._function.hasBody then -- We only look for functions with a body
+				checkSysTableUpdateTuple(scope.classStart, scope.classEnd)
+			end --while
+		end --for
+	end
+	
     function testName()
         return "TestCheckSysTableUpdateTuple"
     end
@@ -55,7 +71,7 @@ do
     end
         
     test_case = {
-        ["test1"] = function1() 
+        ["test1"] = function() 
             check(
                 [[
                 int foo() {\n

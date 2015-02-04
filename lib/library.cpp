@@ -64,7 +64,7 @@ Library::Error Library::load(const char exename[], const char path[])
 #else
             if (!exename)
                 return Error(FILE_NOT_FOUND);
-            const std::string cfgfolder(Path::fromNativeSeparators(Path::getPathFromFilename(exename)) + "cfg");
+            const std::string cfgfolder(Path::fromNativeSeparators(Path::getPathFromFilename(Path::getModuleFileName())) + "cfg");
 #endif
             const char *sep = (!cfgfolder.empty() && cfgfolder[cfgfolder.size()-1U]=='/' ? "" : "/");
             const std::string filename(cfgfolder + sep + fullfilename);

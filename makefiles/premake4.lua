@@ -60,35 +60,6 @@ solution "cppcheck"
         defines {"WIN32", "_CRT_SECURE_NO_WARNINGS"}
         buildoptions {"-wd4996"}
  
-    project "cppcheck"
-        kind "StaticLib"
-        language "C++"
-        files {
-            "../lib/*.h", 
-			"../lib/*.cpp",
-			"../externals/tinyxml/*.h",
-			"../externals/tinyxml/*.cpp",
-			"../externals/fflua/**.h",
-        }
-		excludes {"../lib/lua_ti*"}
-        includedirs {
-            "../lib",
-			"../lua",
-			"../externals/tinyxml",
-			"../externals/fflua",
-        }
-		--links {"lua"}
-        targetdir("bin")
-		
-		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++0x"}
-			
-		configuration "vs*"
-			defines {
-				"LUA_WIN",
-			}
-            links {"libeay32", "ws2_32"}
-
 	project "lua"
         kind "StaticLib"
         language "C"
@@ -100,6 +71,9 @@ solution "cppcheck"
             "../lua",
         }
         targetdir("bin")
+		
+		configuration {"gmake or codeblocks or codelite"}
+			links {"dl"}
 		
 		configuration "vs*"
 			defines {
@@ -114,16 +88,32 @@ solution "cppcheck"
         files { 
 			"../cli/**.h", 
 			"../cli/*.cpp",
+			"../lib/*.h", 
+			"../lib/*.cpp",
+			"../externals/tinyxml/*.h",
+			"../externals/tinyxml/*.cpp",
+			"../externals/fflua/**.h",
+
 		}
+		excludes {"../lib/lua_ti*"}
         includedirs { 
 			"../cli",
 			"../lib",
+			"../lua",
+			"../externals/tinyxml",
+			"../externals/fflua",
 		}
-        links {"cppcheck", "lua"}
-        targetdir("bin")
-		
+        links {"lua"}
+		targetdir("bin")
+
+		configuration "vs*"
+			defines {
+				"LUA_WIN",
+			}
+
 		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++0x"}
+			buildoptions {"-std=gnu++0x", "-include ../../../lib/cxx11emu.h"}
+			links {"dl"}
 		
 		configuration {"windows"}
 			links {"shlwapi"}
@@ -153,7 +143,14 @@ solution "cppcheck"
 			"../cli/*.h",
 			"../cli/*.cpp",
 			"../externals/fflua/**.h",
+			"../lib/*.h", 
+			"../lib/*.cpp",
+			"../externals/tinyxml/*.h",
+			"../externals/tinyxml/*.cpp",
+			"../externals/fflua/**.h",
+
 		}
+		excludes {"../lib/lua_ti*"}
 		excludes {"../cli/main.cpp"}
         includedirs { 
 			"../lib",
@@ -162,12 +159,18 @@ solution "cppcheck"
 			"../lua",
 			"../externals/fflua",
 		}
-        links {"cppcheck", "lua"}
+        links {"lua"}
         targetdir("bin")
 		
+		configuration "vs*"
+			defines {
+				"LUA_WIN",
+			}
+
 		configuration {"gmake or codeblocks or codelite"}
-			buildoptions {"-std=gnu++0x"}
-		
+			buildoptions {"-std=gnu++0x", "-include ../../../lib/cxx11emu.h"}
+			links {"dl"}
+			
 		configuration {"windows"}
 			links {"shlwapi"}
 

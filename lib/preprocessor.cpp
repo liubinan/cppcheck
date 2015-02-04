@@ -2909,6 +2909,10 @@ struct ExpandMacroException : public std::exception
         : linenr(linenr), errorType(errorType), errorText(errorText) {
         // do nothing
     }
+
+	~ExpandMacroException() throw ()
+	{
+	}
 };
 
 static void expandMacroInStr(std::string& strToExpand, std::map<std::string, PreprocessorMacro *> &macros)
